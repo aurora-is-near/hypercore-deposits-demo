@@ -52,7 +52,7 @@ export default function Home() {
       </div>
 
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
+        <h1 className="text-5xl font-extrabold text-white tracking-tight mb-6">
           Deposit to Hyperliquid
         </h1>
         <p className="text-gray-400 text-sm max-w-sm">
