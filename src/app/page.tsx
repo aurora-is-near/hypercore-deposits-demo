@@ -18,8 +18,8 @@ export default function Home() {
       {/* Full-screen background animation */}
       <div className="fixed inset-0 -z-10">
         <Lightfall
-          colors={['#C398FF', '#7B2FFF', '#4B0082']}
-          backgroundColor="#0D0010"
+          colors={['#7FFFD4', '#00C896', '#0D6B55']}
+          backgroundColor="#062018"
           speed={0.4}
           streakCount={6}
           streakWidth={0.8}
@@ -28,7 +28,7 @@ export default function Home() {
           density={0.5}
           twinkle={0.8}
           zoom={3}
-          backgroundGlow={0.6}
+          backgroundGlow={0.5}
           opacity={1}
           mouseInteraction={true}
           mouseStrength={0.6}
