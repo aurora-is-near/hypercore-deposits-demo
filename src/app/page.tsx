@@ -27,6 +27,9 @@ export default function Home() {
         </svg>
         View source
       </a>
+      <p className="fixed top-14 right-4 z-10 text-[11px] text-white/35 text-right leading-tight">
+        Integrating this?<br />Check the source ↑
+      </p>
       {/* Full-screen background animation */}
       <div className="fixed inset-0 -z-10">
         <Lightfall
