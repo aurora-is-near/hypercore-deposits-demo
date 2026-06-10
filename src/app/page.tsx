@@ -7,9 +7,35 @@ const DepositWidget = dynamic(
   { ssr: false }
 );
 
+const Lightfall = dynamic(
+  () => import('@/components/Lightfall'),
+  { ssr: false }
+);
+
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0D0F14] px-4">
+    <main className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
+      {/* Full-screen background animation */}
+      <div className="fixed inset-0 -z-10">
+        <Lightfall
+          colors={['#C398FF', '#7B2FFF', '#4B0082']}
+          backgroundColor="#0D0010"
+          speed={0.4}
+          streakCount={6}
+          streakWidth={0.8}
+          streakLength={1.2}
+          glow={1.2}
+          density={0.5}
+          twinkle={0.8}
+          zoom={3}
+          backgroundGlow={0.6}
+          opacity={1}
+          mouseInteraction={true}
+          mouseStrength={0.6}
+          mouseRadius={0.8}
+        />
+      </div>
+
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
           Deposit to Hyperliquid
