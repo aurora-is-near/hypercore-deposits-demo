@@ -21,8 +21,8 @@ export default function Home() {
           colors={['#7FFFD4', '#00C896', '#0D6B55']}
           backgroundColor="#062018"
           speed={0.4}
-          streakCount={6}
-          streakWidth={0.8}
+          streakCount={2}
+          streakWidth={0.2}
           streakLength={1.2}
           glow={1.2}
           density={0.5}
