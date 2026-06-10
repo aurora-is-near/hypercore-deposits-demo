@@ -9,9 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aurora-is-near/intents-swap-widget": "^7.9.0",
+    "@aurora-is-near/intents-swap-widget-standalone": "^7.9.0",
+    "@wagmi/core": "^3.5.0",
+    "accounts": "^0.12.2",
     "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "viem": "^2.52.2",
+    "wagmi": "^3.6.16"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
