@@ -41,7 +41,7 @@ export default function Home() {
           Deposit to Hyperliquid
         </h1>
         <p className="text-gray-400 text-sm max-w-sm">
-          Bridge any asset from any chain directly into your Hyperliquid account via Aurora Intents.
+          Any asset. Any chain. Directly into your Hyperliquid account, ready to trade!
         </p>
       </div>
 
