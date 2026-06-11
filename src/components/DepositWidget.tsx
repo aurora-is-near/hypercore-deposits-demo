@@ -22,7 +22,6 @@ function DepositWidgetInner() {
     <WidgetConfigProvider
       config={{
         apiKey: '5a6c4f98-f174-4bd2-aa19-3d53e3abe87d',
-        connectedWallets: {},
         slippageTolerance: 100,
         enableAccountAbstraction: true,
         enableAutoTokensSwitching: false,
