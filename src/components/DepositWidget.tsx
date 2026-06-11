@@ -46,7 +46,7 @@ function DepositWidgetInner() {
         backgroundColor: '#24262D',
       }}
     >
-      <Widget defaultTab="deposit" tabs={['deposit']} />
+      <Widget defaultTab="topup" tabs={['topup']} />
     </WidgetConfigProvider>
   );
 }
