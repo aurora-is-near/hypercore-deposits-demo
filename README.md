@@ -1,36 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hyperliquid Deposit Demo
 
-## Getting Started
+A Next.js demo showing how to integrate the [Aurora Intents](https://intents.aurora.dev) deposit widget to let users bridge assets from any chain directly into their [Hyperliquid](https://hyperliquid.xyz) account — with the destination address automatically set to their connected wallet.
 
-First, run the development server:
+**Live demo:** _deploy your own or run locally_
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## How it works
+
+### Aurora Intents Deposit Widget
+
+[Aurora Intents](https://docs.intents.aurora.dev) is a cross-chain intent protocol that can move any asset from any supported chain to a destination address on a target chain. The `@aurora-is-near/intents-swap-widget-standalone` package provides a drop-in React widget with built-in wallet connection (via AppKit/WalletConnect).
+
+This demo uses the widget in **deposit-only mode** — swap and withdraw tabs are hidden, and the destination is locked to Hyperliquid (Hypercore).
+
+```tsx
+<Widget defaultTab="deposit" tabs={['deposit']} />
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Hypercore & destination address
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Hyperliquid's on-chain layer (Hypercore) uses standard EVM addresses. This means the deposit destination is simply the user's connected EVM wallet address — no special derivation needed.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Dynamic destination address injection
 
-## Learn More
+The key integration piece: as soon as a user connects their wallet, the widget automatically uses that address as the Hyperliquid deposit destination via the `sendAddress` config prop.
 
-To learn more about Next.js, take a look at the following resources:
+```tsx
+import { useAppKitWallet } from '@aurora-is-near/intents-swap-widget-standalone';
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+function DepositWidgetInner() {
+  const { address } = useAppKitWallet(); // reads the global AppKit wallet store
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  return (
+    <WidgetConfigProvider
+      config={{
+        apiKey: 'YOUR_API_KEY',
+        sendAddress: address ?? null,           // destination = connected wallet
+        defaultTargetToken: { symbol: 'USDC', blockchain: 'hypercore' },
+        // ...
+      }}
+      theme={widgetTheme}
+    >
+      <Widget defaultTab="deposit" tabs={['deposit']} />
+    </WidgetConfigProvider>
+  );
+}
+```
 
-## Deploy on Vercel
+`useAppKitWallet` reads from AppKit's global singleton store — it works anywhere in the component tree, outside the provider, and updates reactively when the user connects or disconnects. When no wallet is connected, `sendAddress: null` leaves the destination field editable in the widget.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Setup
+
+### 1. Get an API key
+
+Register at [Aurora Intents Studio](https://studio.intents.aurora.dev) to get your API key.
+
+### 2. Install dependencies
+
+```bash
+npm install @aurora-is-near/intents-swap-widget-standalone @aurora-is-near/intents-swap-widget
+# peer deps
+npm install @wagmi/core wagmi viem
+```
+
+### 3. Configure the widget
+
+Create your widget component (see [`src/components/DepositWidget.tsx`](src/components/DepositWidget.tsx)):
+
+```tsx
+'use client';
+import { useState, useEffect } from 'react';
+import {
+  Widget,
+  WidgetConfigProvider,
+  useAppKitWallet,
+} from '@aurora-is-near/intents-swap-widget-standalone';
+import '@aurora-is-near/intents-swap-widget/styles.css';
+
+function DepositWidgetInner() {
+  const { address } = useAppKitWallet();
+
+  return (
+    <WidgetConfigProvider
+      config={{
+        apiKey: 'YOUR_API_KEY',
+        sendAddress: address ?? null,
+        defaultTargetToken: { symbol: 'USDC', blockchain: 'hypercore' },
+        defaultSourceToken: { symbol: 'USDT', blockchain: 'near' },
+        slippageTolerance: 100,
+        enableAccountAbstraction: true,
+        showTransactionHistory: true,
+        showConversionPreview: true,
+      }}
+    >
+      <Widget defaultTab="deposit" tabs={['deposit']} />
+    </WidgetConfigProvider>
+  );
+}
+
+// Hydration guard — the widget uses browser APIs, skip SSR
+export function DepositWidget() {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+  if (!isMounted) return <div style={{ width: 440, height: 560 }} />;
+  return <DepositWidgetInner />;
+}
+```
+
+### 4. Load it without SSR
+
+In Next.js App Router, use `dynamic` to prevent server-side rendering:
+
+```tsx
+import dynamic from 'next/dynamic';
+
+const DepositWidget = dynamic(
+  () => import('@/components/DepositWidget').then(m => m.DepositWidget),
+  { ssr: false }
+);
+```
+
+### 5. Disable React Strict Mode (recommended)
+
+Add to `next.config.ts` to avoid widget state machine issues from double-invocation:
+
+```ts
+const nextConfig = {
+  reactStrictMode: false,
+};
+```
+
+---
+
+## Supported source chains
+
+The widget supports depositing from any of these chains into Hyperliquid:
+
+`near` · `eth` · `base` · `arb` · `op` · `sol` · `btc` · `bsc` · `avax` · `pol` · `ton` · `tron` · `sui` · `bera` · `monad` · `gnosis` · `scroll` · `starknet` · `aurora` · and more
+
+---
+
+## Local development
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## References
+
+- [Aurora Intents docs](https://docs.intents.aurora.dev)
+- [Widget integration quickstart](https://docs.intents.aurora.dev/intents-deposits/quickstart/widget-integration)
+- [Hyperliquid / Hypercore docs](https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/overview)
+- [`@aurora-is-near/intents-swap-widget-standalone` on npm](https://www.npmjs.com/package/@aurora-is-near/intents-swap-widget-standalone)

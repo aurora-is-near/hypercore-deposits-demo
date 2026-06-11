@@ -51,18 +51,16 @@ export default function Home() {
         />
       </div>
 
-      <div className="mb-8 text-center flex flex-col items-center">
-        {/* Official Hyperliquid symbol + logotype */}
-        <div className="flex items-center gap-3 mb-8">
-          <img src="/hyperliquidSVG/HL symbol_mint green.svg" alt="" className="h-10 w-auto" />
-          <img src="/hyperliquidSVG/HL logotype_white.svg" alt="Hyperliquid" className="h-7 w-auto" />
-        </div>
-
-        <h1 className="mb-6 leading-none text-5xl font-extrabold text-white tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>
-          Deposit to Hyperliquid
+      <div className="mb-4 text-center flex flex-col items-center">
+        <h1 className="mb-3 flex items-center gap-4 leading-none">
+          <span className="text-4xl font-semibold text-white tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>Deposit to</span>
+          <span className="flex items-center gap-2">
+            <img src="/hyperliquidSVG/HL symbol_mint green.svg" alt="" className="h-12 w-auto" />
+            <img src="/hyperliquidSVG/HL logotype_white.svg" alt="Hyperliquid" className="h-10 w-auto" />
+          </span>
         </h1>
 
-        <p className="text-gray-400 text-sm max-w-xs text-center leading-relaxed" style={{ fontFamily: 'var(--font-sora)' }}>
+        <p className="mt-4 text-gray-400 text-sm max-w-xs text-center leading-relaxed" style={{ fontFamily: 'var(--font-sora)' }}>
           Any asset. Any chain. Directly into your Hyperliquid account, ready to trade!
         </p>
       </div>
