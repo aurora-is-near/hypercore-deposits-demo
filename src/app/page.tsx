@@ -17,7 +17,7 @@ export default function Home() {
     <main className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
       {/* GitHub link — top-right corner */}
       <div className="fixed top-4 right-4 z-10 flex items-center gap-3">
-        <span className="text-[12px] font-medium text-white/70 tracking-wide">Build your own →</span>
+        <span className="text-sm font-semibold text-white tracking-wide">Build your own →</span>
         <a
           href="https://github.com/aurora-is-near/hypercore-deposits-demo"
           target="_blank"
