@@ -29,6 +29,8 @@ function DepositWidgetInner() {
         enableAutoTokensSwitching: false,
         chainsOrder: [...ALL_CHAINS],
         allowedChainsList: [...ALL_CHAINS],
+        // Lock destination to Hypercore — users cannot change it
+        allowedTargetChainsList: ['hypercore'],
         defaultSourceToken: {
           symbol: 'USDT',
           blockchain: 'near',
