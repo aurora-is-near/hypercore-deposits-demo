@@ -30,18 +30,17 @@ function DepositWidgetInner() {
         chainsOrder: [...ALL_CHAINS],
         allowedChainsList: [...ALL_CHAINS],
         defaultSourceToken: {
-          symbol: 'USDC',
-          blockchain: 'eth',
+          symbol: 'USDT',
+          blockchain: 'near',
         },
+        sendAddress: address ?? null,
         defaultTargetToken: {
           symbol: 'USDC',
           blockchain: 'hypercore',
         },
-        // Deposit destination: connected wallet address on Hypercore
-        sendAddress: address ?? null,
-        extraQuoteParameters: address ? { virtualChainRecipient: address } : {},
         showTransactionHistory: true,
         showConversionPreview: true,
+        extraQuoteParameters: {},
       }}
       theme={widgetTheme}
     >
