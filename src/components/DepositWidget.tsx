@@ -29,8 +29,9 @@ function DepositWidgetInner() {
         enableAutoTokensSwitching: false,
         chainsOrder: [...ALL_CHAINS],
         allowedChainsList: [...ALL_CHAINS],
-        // Lock destination to Hypercore — users cannot change it
+        // Lock destination to USDC on Hypercore — users cannot change it
         allowedTargetChainsList: ['hypercore'],
+        allowedTargetTokensList: ['USDC'],
         defaultSourceToken: {
           symbol: 'USDT',
           blockchain: 'near',
