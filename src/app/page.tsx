@@ -2,11 +2,6 @@
 
 import dynamic from 'next/dynamic';
 
-const DepositWidget = dynamic(
-  () => import('@/components/DepositWidget').then((mod) => mod.DepositWidget),
-  { ssr: false }
-);
-
 const Lightfall = dynamic(
   () => import('@/components/Lightfall'),
   { ssr: false }
@@ -30,6 +25,7 @@ export default function Home() {
           View source
         </a>
       </div>
+
       {/* Full-screen background animation */}
       <div className="fixed inset-0 -z-10">
         <Lightfall
@@ -65,7 +61,10 @@ export default function Home() {
         </p>
       </div>
 
-      <DepositWidget />
+      {/* Widget placeholder */}
+      <div className="w-[440px] h-[560px] rounded-2xl bg-[#24262D] flex items-center justify-center">
+        <span className="text-white/20 text-sm" style={{ fontFamily: 'var(--font-sora)' }}>Widget coming soon</span>
+      </div>
 
       <p className="mt-6 text-xs text-gray-600">
         Powered by{' '}
