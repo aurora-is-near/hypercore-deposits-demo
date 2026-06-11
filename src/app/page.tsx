@@ -57,8 +57,8 @@ export default function Home() {
         <h1 className="mb-3 flex items-center gap-4 leading-none">
           <span className="text-4xl font-semibold text-white tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>Deposit to</span>
           <span className="flex items-center gap-2">
-            <img src="/hyperliquidSVG/HL symbol_mint green.svg" alt="" className="h-12 w-auto" />
-            <img src="/hyperliquidSVG/HL logotype_white.svg" alt="Hyperliquid" className="h-10 w-auto" />
+            <img src="/hyperliquidSVG/HL symbol_mint green.svg" alt="" className="h-11 w-auto" />
+            <img src="/hyperliquidSVG/HL logotype_white.svg" alt="Hyperliquid" className="h-9 w-auto" />
           </span>
         </h1>
 
