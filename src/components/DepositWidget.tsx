@@ -31,7 +31,8 @@ function DepositWidgetInner() {
         allowedChainsList: [...ALL_CHAINS],
         // Lock destination to USDC on Hypercore — users cannot change it
         allowedTargetChainsList: ['hypercore'],
-        allowedTargetTokensList: ['USDC'],
+        // Use the exact asset ID so the widget can't fall back to NEAR USDC
+        allowedTargetTokensList: ['1cs_v1:hypercore:erc20:0xb88339CB7199b77E23DB6E890353E22632Ba630f'],
         defaultSourceToken: {
           symbol: 'USDT',
           blockchain: 'near',
