@@ -2,7 +2,7 @@
 
 A Next.js demo showing how to integrate the [Aurora Intents](https://intents.aurora.dev) deposit widget to let users bridge assets from any chain directly into their [Hyperliquid](https://hyperliquid.xyz) account — with the destination address automatically set to their connected wallet.
 
-**Live demo:** _deploy your own or run locally_
+**Live demo:** [hypercore-deposits-demo.vercel.app](https://hypercore-deposits-demo.vercel.app)
 
 ---
 
