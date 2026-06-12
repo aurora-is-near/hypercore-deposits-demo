@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { CopyPromptButton } from '@/components/CopyPromptButton';
 
 const DepositWidget = dynamic(
   () => import('@/components/DepositWidget').then((mod) => mod.DepositWidget),
@@ -18,6 +19,7 @@ export default function Home() {
       {/* GitHub link — top-right corner */}
       <div className="fixed top-4 right-4 z-10 flex items-center gap-3">
         <span className="text-sm font-semibold text-white tracking-wide">Build your own →</span>
+        <CopyPromptButton />
         <a
           href="https://github.com/aurora-is-near/hypercore-deposits-demo"
           target="_blank"
