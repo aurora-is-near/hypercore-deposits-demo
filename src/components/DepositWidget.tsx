@@ -15,11 +15,10 @@ const ALL_CHAINS = [
   'starknet', 'xlayer', 'aurora', 'hypercore',
 ] as const;
 
+const DEFAULT_ADDRESS = '0xD84368a36ff4F6285F4121ED75E8c1f237E51506';
+
 function DepositWidgetInner() {
   const { address } = useAppKitWallet();
-
-  // topup mode requires sendAddress — only enable it once wallet is connected
-  const isConnected = !!address;
 
   return (
     <WidgetConfigProvider
@@ -31,7 +30,7 @@ function DepositWidgetInner() {
         chainsOrder: [...ALL_CHAINS],
         allowedChainsList: [...ALL_CHAINS],
         defaultSourceToken: { symbol: 'USDT', blockchain: 'near' as const },
-        ...(isConnected ? { sendAddress: address } : {}),
+        sendAddress: address ?? DEFAULT_ADDRESS,
         defaultTargetToken: { symbol: 'USDC', blockchain: 'hypercore' as const },
         showTransactionHistory: true,
         showConversionPreview: true,
@@ -48,10 +47,7 @@ function DepositWidgetInner() {
         backgroundColor: '#24262D',
       }}
     >
-      {isConnected
-        ? <Widget defaultTab="topup" tabs={['topup']} />
-        : <Widget />
-      }
+      <Widget defaultTab="topup" tabs={['topup']} />
     </WidgetConfigProvider>
   );
 }
