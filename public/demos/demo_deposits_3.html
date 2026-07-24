@@ -1,0 +1,1638 @@
+
+<meta charset="utf-8">
+<title>Hydrex — Cross-chain Deposit Prototype</title>
+<style>
+/* Hydrex uses Satoshi — approximate with the same fallback stack they ship */
+:root {
+  --blue: #0052FF;
+  --blue-hover: #0045D8;
+  --blue-tint: #EBF1FF;
+  --text: #070709;
+  --text-2: #6B7280;
+  --text-3: #9CA3AF;
+  --border: #E5E7EB;
+  --border-2: #F3F4F6;
+  --bg: #FFFFFF;
+  --surface-2: #F9FAFB;
+  --green-a: #34D399;
+  --green-b: #10B981;
+  --aurora: #00C896;
+  --aurora-dark: #00A87E;
+  --aurora-tint: #F0FDF8;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-modal: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1), 0 25px 50px -12px rgba(0,0,0,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "system-ui", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; }
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 72px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--text);
+}
+
+.logo svg { flex-shrink: 0; }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.nav-link {
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.nav-link:hover { color: var(--blue); }
+.nav-link.active { color: var(--blue); }
+
+.btn-connect {
+  padding: 9px 22px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--blue);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-connect:hover { background: var(--blue-hover); }
+
+/* ── Page ── */
+.page {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 40px 40px 80px;
+}
+
+.proto-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--aurora-tint);
+  border: 1px solid #B7EFDD;
+  border-radius: 9999px;
+  padding: 7px 16px;
+  font-size: 13px;
+  color: #067A5B;
+  margin-bottom: 28px;
+  font-weight: 500;
+}
+.proto-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--aurora);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.35} }
+@media (prefers-reduced-motion: reduce) { .proto-dot { animation: none; } }
+
+.page-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: var(--text);
+  margin-top: 14px;
+  font-weight: 400;
+}
+
+/* rewards card */
+.rewards-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 22px;
+  min-width: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-image: radial-gradient(circle, #E5E7EB 1px, transparent 1px);
+  background-size: 14px 14px;
+  background-color: white;
+}
+
+.rewards-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.rewards-label {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-connect-outline {
+  padding: 9px 24px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  background: white;
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn-connect-outline:hover { border-color: var(--text-3); }
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 11px 18px;
+  flex: 1;
+  min-width: 260px;
+  color: var(--text-3);
+  font-size: 15px;
+}
+
+.tabs-pill {
+  display: flex;
+  background: var(--surface-2);
+  border-radius: 9999px;
+  padding: 4px;
+}
+
+.tab-pill {
+  padding: 8px 20px;
+  border-radius: 9999px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.tab-pill.active {
+  background: white;
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.toolbar-btn:hover { border-color: var(--text-3); }
+
+/* ── Table ── */
+.pool-table { width: 100%; border-collapse: collapse; }
+
+.pool-table thead th {
+  padding: 18px 16px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+.pool-table thead th:first-child { padding-left: 28px; border-radius: 12px 0 0 12px; }
+.pool-table thead th:last-child { border-radius: 0 12px 12px 0; }
+
+.pool-table tbody tr { border-bottom: 1px solid var(--border-2); }
+.pool-table tbody tr:hover { background: #FAFBFF; }
+
+.pool-table tbody td {
+  padding: 20px 16px;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+.pool-table tbody td:first-child { padding-left: 28px; }
+
+.pair-cell { display: flex; align-items: center; gap: 14px; }
+
+.token-icons { display: flex; flex-shrink: 0; }
+.token-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white;
+  border: 2px solid white;
+}
+.token-icon + .token-icon { margin-left: -10px; }
+.token-icon.sm { width: 22px; height: 22px; font-size: 8px; border-width: 1.5px; }
+
+.pair-name { font-size: 16px; font-weight: 700; }
+
+.tvl { font-size: 15px; font-weight: 500; }
+.apr { font-size: 15px; font-weight: 700; }
+
+.btn-deposit {
+  padding: 8px 22px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--blue);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-deposit:hover { background: var(--blue-hover); }
+
+/* ── Overlay & Modal ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: var(--shadow-modal);
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+}
+.overlay.open .modal { transform: translateY(0) scale(1); }
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.modal-title-row { display: flex; align-items: center; gap: 12px; }
+
+.modal-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.modal-subtitle { font-size: 14px; color: var(--text-2); margin-top: 2px; }
+
+.modal-close {
+  border: none; background: none; cursor: pointer;
+  color: var(--text); padding: 4px;
+  display: flex; align-items: center;
+}
+.modal-close:hover { color: var(--text-2); }
+
+/* ── Strategy cards (matching Hydrex) ── */
+.strategy-cards { display: flex; flex-direction: column; gap: 14px; }
+
+.strategy-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: white;
+  text-align: left;
+  width: 100%;
+  position: relative;
+}
+.strategy-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px var(--blue);
+}
+
+.sc-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sc-pair {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-dot { color: var(--text-3); font-size: 13px; }
+.sc-tvl { font-size: 14px; color: var(--text-2); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.sc-spacer { flex: 1; }
+
+.apr-pill {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(90deg, var(--green-a), var(--green-b));
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-chevron { color: var(--text); flex-shrink: 0; }
+
+.sc-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+.sc-desc { font-size: 14px; color: var(--text-2); line-height: 1.45; }
+
+/* Cross-chain card */
+.strategy-card.xchain { border-color: #B7EFDD; background: linear-gradient(180deg, #FFFFFF 0%, var(--aurora-tint) 100%); }
+.strategy-card.xchain:hover {
+  border-color: var(--aurora);
+  box-shadow: 0 0 0 1px var(--aurora);
+}
+
+.apr-pill.aurora { background: linear-gradient(90deg, #00E5AC, var(--aurora)); }
+
+.badge-new {
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--aurora);
+  color: white;
+}
+
+.aurora-powered {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--aurora-dark);
+  font-weight: 600;
+  margin-top: 7px;
+}
+
+/* ── Widget phase ── */
+.widget-panel { display: none; }
+.widget-panel.visible { display: block; }
+
+.widget-back {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-2); cursor: pointer;
+  border: none; background: none; padding: 0;
+  margin-bottom: 18px;
+}
+.widget-back:hover { color: var(--text); }
+
+/* Aurora widget — light styling to sit inside the white Hydrex modal */
+.aurora-widget {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  background: white;
+}
+
+.aw-section-label {
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-3); margin-bottom: 9px;
+}
+
+.aw-chain-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+
+.aw-chain-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 9999px;
+  border: 1px solid var(--border); background: white;
+  font-size: 13px; font-weight: 500; color: var(--text-2);
+  cursor: pointer; transition: all 0.15s;
+}
+.aw-chain-chip:hover { border-color: var(--text-3); }
+.aw-chain-chip.active { border-color: var(--blue); background: var(--blue-tint); color: var(--blue); font-weight: 600; }
+
+.aw-chain-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.aw-input-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  transition: border-color 0.15s;
+}
+.aw-input-wrap:focus-within { border-color: var(--blue); background: white; }
+
+.aw-input-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.aw-token-select { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.aw-token-name { font-size: 15px; font-weight: 700; }
+.aw-on-chain { font-size: 13px; color: var(--text-3); }
+
+.aw-input-amount {
+  font-size: 28px; font-weight: 700; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  border: none; background: none; outline: none;
+  width: 100%; color: var(--text); font-family: inherit;
+}
+.aw-input-amount::placeholder { color: var(--text-3); }
+
+.aw-input-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+.aw-balance { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.aw-max {
+  font-size: 12px; font-weight: 700; color: var(--blue);
+  cursor: pointer; letter-spacing: 0.03em;
+  border: none; background: none; padding: 0; font-family: inherit;
+}
+
+.aw-arrow-divider {
+  display: flex; align-items: center; justify-content: center;
+  margin: 4px 0; color: var(--text-3);
+}
+
+.aw-dest {
+  border: 1px solid #B7EFDD;
+  background: var(--aurora-tint);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.aw-dest-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.aw-dest-label { font-size: 13px; color: var(--aurora-dark); font-weight: 600; }
+.aw-dest-row { display: flex; align-items: center; justify-content: space-between; }
+.aw-dest-amount { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.aw-dest-chain { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+
+/* two-token split */
+.dest-split-list { display: flex; flex-direction: column; gap: 10px; }
+.dest-split-row { display: flex; align-items: center; justify-content: space-between; }
+.dest-split-left { display: flex; align-items: center; gap: 9px; }
+.dest-split-sym { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.dest-split-right { display: flex; align-items: center; gap: 10px; }
+.dest-split-amt-group { text-align: right; }
+.dest-split-amt { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--text); display: block; }
+.dest-split-usd { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; margin-top: 1px; }
+.dest-split-pct {
+  font-size: 11.5px; font-weight: 700; color: var(--aurora-dark);
+  background: rgba(0,200,150,0.14); padding: 2px 8px; border-radius: 9999px;
+  min-width: 38px; text-align: center;
+}
+.dest-split-divider { height: 1px; background: #D4F3E7; margin: 2px 0; }
+.dest-split-total {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 10px; margin-top: 2px;
+  border-top: 1px solid #D4F3E7;
+  font-size: 13px; color: var(--aurora-dark); font-weight: 600;
+}
+.dest-split-total-val { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+.aw-dest-meta {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 10px; font-size: 12.5px; color: var(--text-2);
+  flex-wrap: wrap;
+}
+.aw-dest-meta .good { color: var(--aurora-dark); font-weight: 600; }
+
+.aw-connect-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 9999px;
+  background: var(--blue);
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.aw-connect-btn:hover { background: var(--blue-hover); }
+.aw-connect-btn:disabled { background: var(--border); color: var(--text-3); cursor: not-allowed; }
+.aw-connect-btn.done { background: var(--aurora); cursor: default; }
+.aw-connect-btn.done:hover { background: var(--aurora); }
+
+/* step indicator */
+.steps-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin-bottom: 14px;
+}
+.step-item { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--text-3); }
+.step-item.active { color: var(--text); }
+.step-item.done { color: var(--aurora-dark); }
+.step-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  background: var(--border-2); color: var(--text-3);
+}
+.step-item.active .step-num { background: var(--blue); color: white; }
+.step-item.done .step-num { background: var(--aurora); color: white; }
+.step-line { width: 32px; height: 1.5px; background: var(--border); border-radius: 1px; }
+.step-line.done { background: var(--aurora); }
+
+.spinner {
+  width: 15px; height: 15px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.5s; } }
+
+/* ── Asset selection modal ── */
+.asset-overlay {
+  position: fixed; inset: 0;
+  background: rgba(7,7,9,0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.asset-overlay.open { opacity: 1; pointer-events: all; }
+
+.asset-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%; max-width: 560px;
+  box-shadow: var(--shadow-modal);
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.2s cubic-bezier(0.32,0.72,0,1);
+}
+.asset-overlay.open .asset-modal { transform: translateY(0) scale(1); }
+
+.asset-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 14px;
+}
+.asset-modal-title { font-size: 17px; font-weight: 700; }
+
+.asset-search {
+  margin: 0 20px 14px;
+  display: flex; align-items: center; gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 9px 16px;
+}
+.asset-search input {
+  border: none; outline: none; background: none;
+  font-size: 14px; width: 100%; font-family: inherit;
+  color: var(--text);
+}
+.asset-search input::placeholder { color: var(--text-3); }
+.asset-search svg { color: var(--text-3); flex-shrink: 0; }
+
+/* two-panel body: chains | assets — fixed height so it never jumps between chains */
+.asset-body {
+  display: flex;
+  height: 420px;
+  border-top: 1px solid var(--border);
+}
+
+.chain-rail {
+  width: 168px; flex-shrink: 0;
+  overflow-y: auto;
+  padding: 8px;
+  border-right: 1px solid var(--border);
+  background: var(--surface-2);
+  scrollbar-width: thin;
+}
+
+.chain-rail-item {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%;
+  padding: 9px 10px; border-radius: 9px;
+  border: none; background: none;
+  font-size: 13.5px; font-weight: 500; color: var(--text-2);
+  cursor: pointer; text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.chain-rail-item:hover { background: rgba(0,0,0,0.04); color: var(--text); }
+.chain-rail-item.active { background: white; color: var(--text); font-weight: 700; box-shadow: var(--shadow-card); }
+
+.chain-rail-logo {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  overflow: hidden; display: block;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+.chain-rail-logo svg { width: 100%; height: 100%; display: block; }
+.chain-rail-all {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #627EEA, #9945FF 45%, #F7931A 100%);
+}
+.chain-rail-count {
+  margin-left: auto; font-size: 11px; font-weight: 600;
+  color: var(--text-3); font-variant-numeric: tabular-nums;
+}
+.chain-rail-item.active .chain-rail-count { color: var(--blue); }
+
+.asset-list { overflow-y: auto; padding: 8px; flex: 1; }
+
+/* chain badge on token icon */
+.asset-icon-wrap { position: relative; flex-shrink: 0; }
+.chain-badge {
+  position: absolute; right: -3px; bottom: -3px;
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid white; overflow: hidden;
+  background: var(--surface-2);
+}
+.chain-badge svg { width: 100%; height: 100%; display: block; }
+.asset-chain-label { font-size: 12.5px; color: var(--text-3); }
+
+.asset-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  padding: 11px 12px;
+  border: none; background: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.asset-row:hover { background: var(--surface-2); }
+.asset-row.selected { background: var(--blue-tint); }
+
+.asset-info { flex: 1; min-width: 0; }
+.asset-symbol { font-size: 15px; font-weight: 700; }
+.asset-name { font-size: 12.5px; color: var(--text-2); }
+.asset-balance { text-align: right; font-variant-numeric: tabular-nums; }
+.asset-bal-amount { font-size: 14px; font-weight: 600; }
+.asset-bal-usd { font-size: 12px; color: var(--text-3); }
+
+.aw-or-divider { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.aw-or-line { flex: 1; height: 1px; background: var(--border); }
+.aw-or-text { font-size: 13px; color: var(--text-3); font-weight: 500; }
+
+.aw-qr-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 9999px;
+  background: white;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.aw-qr-btn:hover { border-color: var(--text-3); }
+
+.aw-footer {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 16px;
+}
+.aw-footer-text { font-size: 12.5px; color: var(--text-3); }
+.aw-aurora-logo {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12.5px; font-weight: 700; color: var(--aurora-dark);
+}
+
+/* ── QR deposit panel ── */
+.qr-panel { display: none; }
+.qr-panel.visible { display: block; position: relative; }
+
+.qr-close {
+  position: absolute; top: 0; right: 0;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--text-2); cursor: pointer;
+  transition: all 0.12s; z-index: 2;
+}
+.qr-close:hover { background: var(--border); color: var(--text); }
+
+.qr-intro { text-align: center; margin-bottom: 16px; }
+.qr-intro-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.qr-intro-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+.qr-intro-sub b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.qr-code-wrap {
+  display: flex; align-items: center; justify-content: center;
+  background: white; border-radius: 14px; padding: 16px;
+  width: 200px; margin: 0 auto 16px;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.qr-chain-tag {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--text-2);
+  margin-bottom: 16px;
+}
+
+.qr-address-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 14px;
+}
+.qr-address-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.qr-copy-btn {
+  flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+  border: none; background: none; color: var(--blue);
+  font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 6px;
+  border-radius: 6px; transition: background 0.12s;
+}
+.qr-copy-btn:hover { background: var(--blue-tint); }
+.qr-copy-btn.copied { color: var(--aurora); }
+
+.qr-warning {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: #FFF8E8; border: 1px solid #FCE29B;
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 18px;
+  font-size: 12.5px; color: #926B0A; line-height: 1.45;
+}
+.qr-warning svg { flex-shrink: 0; margin-top: 1px; }
+.qr-warning b { font-weight: 700; }
+
+.qr-status {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  padding: 13px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  font-size: 13.5px; font-weight: 600; color: var(--text-2);
+  transition: all 0.2s;
+}
+.qr-status.detected {
+  background: rgba(0,200,150,0.10); border-color: #B7EFDD; color: var(--aurora-dark);
+}
+.qr-pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--blue);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .qr-pulse-dot { animation: none; } }
+
+@media (max-width: 900px) {
+  .nav { padding: 0 20px; }
+  .page { padding: 24px 20px 60px; }
+  .rewards-card { min-width: 0; width: 100%; }
+  .nav-link { display: none; }
+  .page-title { font-size: 38px; }
+  .th-hide-sm { display: none; }
+  .td-hide-sm { display: none; }
+}
+</style>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="logo">
+    <!-- Hydrex knot mark -->
+    <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
+      <circle cx="13" cy="13" r="6.5" stroke="#070709" stroke-width="3.4"/>
+      <circle cx="27" cy="13" r="6.5" stroke="#070709" stroke-width="3.4"/>
+      <circle cx="13" cy="27" r="6.5" stroke="#070709" stroke-width="3.4"/>
+      <circle cx="27" cy="27" r="6.5" stroke="#070709" stroke-width="3.4"/>
+      <circle cx="20" cy="20" r="6.5" fill="#fff" stroke="#070709" stroke-width="3.4"/>
+    </svg>
+    HYDREX
+  </div>
+  <div class="nav-right">
+    <button class="nav-link">Trade</button>
+    <button class="nav-link">Accounts</button>
+    <button class="nav-link active">Earn</button>
+    <button class="nav-link">Vote</button>
+    <button class="nav-link">Analytics</button>
+    <button class="btn-connect">Connect</button>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+
+  <div class="proto-banner">
+    <span class="proto-dot"></span>
+    Prototype — click Deposit on any pool to see the new cross-chain option, powered by Aurora Intents
+  </div>
+
+  <div class="page-top">
+    <div>
+      <h1 class="page-title">Earn</h1>
+      <p class="page-subtitle">Earn options tokens by staking or providing liquidity.</p>
+    </div>
+    <div class="rewards-card">
+      <div>
+        <div class="rewards-amount">
+          0
+          <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="17" stroke="#070709" stroke-width="4"/>
+            <circle cx="20" cy="20" r="7" stroke="#070709" stroke-width="4"/>
+          </svg>
+        </div>
+        <div class="rewards-label">
+          Claimable rewards
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </div>
+      </div>
+      <button class="btn-connect-outline">Connect</button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Search pools...
+    </div>
+    <div class="tabs-pill">
+      <button class="tab-pill active">All Pools</button>
+      <button class="tab-pill">My Positions</button>
+    </div>
+    <button class="toolbar-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+      Filters
+    </button>
+    <button class="toolbar-btn">+ Create</button>
+  </div>
+
+  <table class="pool-table">
+    <thead>
+      <tr>
+        <th>Strategies</th>
+        <th>TVL</th>
+        <th>Avg. APR</th>
+        <th class="th-hide-sm">Your Stake</th>
+        <th class="th-hide-sm">Your Rewards</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="poolTable"></tbody>
+  </table>
+</div>
+
+<!-- OVERLAY + MODAL -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+
+    <div class="modal-header">
+      <div class="modal-title-row">
+        <div class="token-icons" id="modalIcons"></div>
+        <div>
+          <div class="modal-title" id="modalTitle">HYDX/USDC</div>
+          <div class="modal-subtitle">Available Strategies (4)</div>
+        </div>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Phase 1: strategies -->
+    <div id="phaseChoose">
+      <div class="strategy-cards">
+
+        <button class="strategy-card" onclick="selectMethod('manual')">
+          <div class="sc-top">
+            <div class="token-icons" data-icons></div>
+            <span class="sc-pair" data-pair>HYDX / USDC</span>
+            <span class="sc-dot">•</span>
+            <span class="sc-tvl">TVL $423K</span>
+            <span class="sc-spacer"></span>
+            <span class="apr-pill">APR: 7.11%</span>
+            <svg class="sc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="sc-name">Manual</div>
+          <div class="sc-desc">Set your own price range and manage your position manually</div>
+        </button>
+
+        <button class="strategy-card" onclick="selectMethod('ichi')">
+          <div class="sc-top">
+            <div class="token-icons"><div class="token-icon sm" style="background:#2775CA;">$</div></div>
+            <span class="sc-pair">Deposit USDC</span>
+            <span class="sc-dot">•</span>
+            <span class="sc-tvl">TVL $320K</span>
+            <span class="sc-spacer"></span>
+            <span class="apr-pill">APR: 15.49%</span>
+            <svg class="sc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="sc-name">ICHI Single Sided</div>
+          <div class="sc-desc">Single-sided deposit, automatically managed by ICHI</div>
+        </button>
+
+        <button class="strategy-card" onclick="selectMethod('classic')">
+          <div class="sc-top">
+            <div class="token-icons" data-icons></div>
+            <span class="sc-pair" data-pair>HYDX / USDC</span>
+            <span class="sc-dot">•</span>
+            <span class="sc-tvl">TVL $8K</span>
+            <span class="sc-spacer"></span>
+            <span class="apr-pill">APR: 1.6%</span>
+            <svg class="sc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="sc-name">Classic</div>
+          <div class="sc-desc">Full-range liquidity, no active management required</div>
+        </button>
+
+        <button class="strategy-card xchain" onclick="selectMethod('xchain')">
+          <div class="sc-top">
+            <div class="token-icons">
+              <!-- Aurora triangle mark -->
+              <div class="token-icon sm" style="background:white;border:1.5px solid #B7EFDD;padding:0;">
+                <svg width="14" height="14" viewBox="0 0 288 288">
+                  <path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/>
+                </svg>
+              </div>
+            </div>
+            <span class="sc-pair">Universal Deposit</span>
+            <span class="badge-new">New</span>
+            <span class="sc-spacer"></span>
+            <span class="apr-pill aurora">33+ chains</span>
+            <svg class="sc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="sc-desc">Deposit any asset from any chain — Ethereum, Solana, Bitcoin and more. No bridging, no gas on Base.</div>
+          <div class="aurora-powered">
+            <svg width="11" height="11" viewBox="0 0 288 288">
+              <path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/>
+            </svg>
+            Powered by Aurora Intents
+          </div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Phase 2: Aurora widget -->
+    <div class="widget-panel" id="phaseWidget">
+      <button class="widget-back" onclick="backToChoose()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to strategies
+      </button>
+
+      <div class="aurora-widget">
+      <div id="depositForm">
+        <div class="aw-input-wrap">
+          <div class="aw-input-top">
+            <button class="aw-token-select" id="tokenSelectBtn" onclick="openAssetModal()" style="border:none;background:none;padding:0;">
+              <div class="token-icon sm" id="selTokenIcon" style="background:#2775CA;">$</div>
+              <span class="aw-token-name" id="selTokenName">USDC</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <span class="aw-on-chain">on Ethereum</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <input class="aw-input-amount" type="text" placeholder="0.00" value="500" id="widgetAmount" oninput="updateEstimate()">
+            <span class="aw-balance" id="srcUsdValue" style="white-space:nowrap;">$500.00</span>
+          </div>
+          <div class="aw-input-footer">
+            <span class="aw-balance">Balance: 1,240.00 USDC</span>
+            <button class="aw-max" onclick="document.getElementById('widgetAmount').value=selectedAsset.balance;updateEstimate()">MAX</button>
+          </div>
+        </div>
+
+        <div class="aw-arrow-divider">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </div>
+
+        <div class="aw-dest">
+          <div class="aw-dest-label-row">
+            <div class="aw-dest-label" id="destLabel">Pool receives on Base — HYDX/USDC</div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A87E" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div id="destSplit"></div>
+          <div class="aw-dest-meta">
+            <span id="destSlippage">≈ 0.35% slippage</span>
+            <span>·</span>
+            <span>~30s settlement</span>
+            <span>·</span>
+            <span class="good">No gas needed on Base</span>
+          </div>
+        </div>
+
+        <div class="steps-row">
+          <div class="step-item active" id="stepItem1"><span class="step-num" id="stepNum1">1</span>Approve deposit</div>
+          <span class="step-line" id="stepLine"></span>
+          <div class="step-item" id="stepItem2"><span class="step-num" id="stepNum2">2</span>Send assets</div>
+        </div>
+
+        <button class="aw-connect-btn" id="actionBtn" onclick="runStep()">Approve deposit</button>
+
+        <div class="aw-or-divider">
+          <span class="aw-or-line"></span>
+          <span class="aw-or-text">or</span>
+          <span class="aw-or-line"></span>
+        </div>
+
+        <button class="aw-qr-btn" onclick="openQrPanel()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+          Deposit via QR code — no wallet connect needed
+        </button>
+      </div>
+
+      <!-- QR deposit panel -->
+      <div class="qr-panel" id="qrPanel">
+        <button class="qr-close" onclick="closeQrPanel()" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+
+        <div class="qr-intro">
+          <div class="qr-intro-title">Scan to deposit</div>
+          <div class="qr-intro-sub">Send <b id="qrAmount">500 USDC</b> from any wallet or exchange</div>
+        </div>
+
+        <div class="qr-code-wrap">
+          <canvas id="qrCanvas" width="168" height="168"></canvas>
+        </div>
+
+        <div class="qr-chain-tag">
+          <span class="aw-chain-dot" id="qrChainDot" style="background:#627EEA;"></span>
+          <span id="qrChainLabel">Send on Ethereum only</span>
+        </div>
+
+        <div class="qr-address-box">
+          <span class="qr-address-text" id="qrAddress">0x7a3F...9E21</span>
+          <button class="qr-copy-btn" id="qrCopyBtn" onclick="copyQrAddress()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+
+        <div class="qr-warning">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#926B0A" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          <span>Only send <b id="qrWarnAsset">USDC</b> on <b id="qrWarnChain">Ethereum</b> to this address. Sending any other asset or using the wrong network may result in permanent loss.</span>
+        </div>
+
+        <div class="qr-status" id="qrStatus">
+          <span class="qr-pulse-dot"></span>
+          Waiting for deposit…
+        </div>
+      </div>
+
+        <div class="aw-footer">
+          <span class="aw-footer-text">Secured by</span>
+          <span class="aw-aurora-logo">
+            <svg width="13" height="13" viewBox="0 0 288 288">
+              <path fill="#00C896" d="M144,0C64.5,0,0,64.5,0,144s64.5,144,144,144s144-64.5,144-144S223.5,0,144,0z"/>
+              <path fill="#FFF" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/>
+            </svg>
+            Aurora Intents
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ASSET SELECTION MODAL -->
+<div class="asset-overlay" id="assetOverlay">
+  <div class="asset-modal">
+    <div class="asset-modal-header">
+      <span class="asset-modal-title">Select asset</span>
+      <button class="modal-close" onclick="closeAssetModal()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="asset-search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="assetSearch" placeholder="Search name or symbol" oninput="renderAssets()">
+    </div>
+    <div class="asset-body">
+      <div class="chain-rail" id="chainFilter"></div>
+      <div class="asset-list" id="assetList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CHAINS = [
+  { id: 'all',      name: 'All chains', color: null },
+  { id: 'ethereum', name: 'Ethereum',   color: '#627EEA' },
+  { id: 'base',     name: 'Base',       color: '#0052FF' },
+  { id: 'solana',   name: 'Solana',     color: '#9945FF' },
+  { id: 'bitcoin',  name: 'Bitcoin',    color: '#F7931A' },
+  { id: 'arbitrum', name: 'Arbitrum',   color: '#12AAFF' },
+  { id: 'near',     name: 'NEAR',       color: '#00EC97' },
+  { id: 'tron',     name: 'Tron',       color: '#EB0029' },
+];
+
+// Real chain marks (from @aurora-is-near/intents-swap-widget icons; Solana hand-built)
+const CHAIN_LOGOS = {
+  ethereum: '<svg viewBox="0 0 28 28"><rect width="28" height="28" fill="#fff"/><path d="M14 3.4L13.86 3.89V17.9L14 18.04L20.5 14.2L14 3.4Z" fill="#343434"/><path d="M14 3.4L7.49 14.2L14 18.04V11.24V3.4Z" fill="#8C8C8C"/><path d="M14 19.27L13.92 19.37V24.36L14 24.6L20.51 15.43L14 19.27Z" fill="#3C3C3B"/><path d="M14 24.6V19.27L7.49 15.43L14 24.6Z" fill="#8C8C8C"/><path d="M14 18.04L20.5 14.2L14 11.24V18.04Z" fill="#141414"/><path d="M7.49 14.2L14 18.04V11.24L7.49 14.2Z" fill="#393939"/></svg>',
+  base: '<svg viewBox="0 0 28 28"><rect width="28" height="28" fill="#0052FF"/><path d="M14.21 6.19C19.92 6.42 23.61 12.46 20.87 17.62C18.48 22.13 12.37 23.13 8.63 19.63C7.24 18.33 6.39 16.51 6.2 14.63H16.57V13.38L16.5 13.31H6.2C6.58 9.59 9.47 6.64 13.21 6.25C13.36 6.23 13.65 6.2 13.77 6.2H14.21V6.19Z" fill="#fff"/></svg>',
+  solana: '<svg viewBox="0 0 28 28"><rect width="28" height="28" fill="#0B0B14"/><defs><linearGradient id="solg" x1="6" y1="20" x2="22" y2="8" gradientUnits="userSpaceOnUse"><stop stop-color="#9945FF"/><stop offset="1" stop-color="#14F195"/></linearGradient></defs><g fill="url(#solg)"><path d="M8.6 18.1h11.3l-2.5 2.5H6.1z"/><path d="M8.6 7.4h11.3l-2.5 2.5H6.1z"/><path d="M6.1 12.75h11.3l2.5 2.5H8.6z" transform="translate(0,0)"/></g></svg>',
+  bitcoin: '<svg viewBox="0 0 28 28"><rect width="28" height="28" fill="#F7931A"/><path d="M20.55 12.29C20.82 10.46 19.43 9.48 17.52 8.82L18.14 6.34L16.63 5.96L16.03 8.37C15.63 8.27 15.23 8.18 14.82 8.09L15.43 5.66L13.92 5.28L13.3 7.76C12.97 7.69 12.65 7.61 12.34 7.53L10.26 7L9.86 8.61C9.86 8.61 10.98 8.87 10.96 8.88C11.57 9.03 11.68 9.44 11.66 9.76L10.96 12.59C11 12.6 11.06 12.62 11.12 12.64L10.96 12.6L9.97 16.56C9.9 16.75 9.71 17.02 9.28 16.92L8.18 16.65L7.43 18.38L9.39 18.87C9.76 18.96 10.11 19.06 10.47 19.15L9.85 21.66L11.36 22.04L11.98 19.56C12.39 19.67 12.79 19.77 13.18 19.87L12.56 22.34L14.07 22.72L14.69 20.22C17.26 20.71 19.2 20.51 20.01 18.18C20.67 16.31 19.98 15.22 18.62 14.52C19.61 14.29 20.35 13.64 20.55 12.3ZM17.1 17.13C16.63 19 13.48 17.99 12.45 17.74L13.28 14.42C14.3 14.68 17.59 15.18 17.1 17.14ZM17.56 12.27C17.13 13.98 14.51 13.11 13.65 12.9L14.4 9.89C15.25 10.1 18 10.5 17.55 12.28Z" fill="#fff"/></svg>',
+  arbitrum: '<svg viewBox="0 0 28 28"><rect width="28" height="28" fill="#213147"/><path d="M15.4 15.44L14.48 17.95C14.46 18.02 14.46 18.09 14.48 18.17L16.05 22.49L17.87 21.44L15.68 15.44C15.63 15.3 15.44 15.3 15.38 15.44Z" fill="#12AAFF"/><path d="M17.24 11.21C17.19 11.07 17 11.07 16.94 11.21L16.02 13.72C16 13.79 16 13.86 16.02 13.94L18.6 21.01L20.42 19.96L17.23 11.21Z" fill="#12AAFF"/><path d="M13.41 9.41H11.65C11.52 9.41 11.4 9.49 11.35 9.61L7.57 19.96L9.39 21.01L13.55 9.61C13.59 9.5 13.51 9.4 13.41 9.4Z" fill="#fff"/><path d="M16.5 9.41H14.74C14.61 9.41 14.49 9.49 14.44 9.61L10.13 21.43L11.95 22.48L16.64 9.61C16.68 9.5 16.6 9.4 16.5 9.4Z" fill="#fff"/></svg>',
+  near: '<svg viewBox="0 0 28 28"><rect width="28" height="28" fill="#041417"/><path d="M18.23 7.71L15.3 12.05C15.25 12.15 15.25 12.27 15.29 12.37C15.36 12.46 15.5 12.53 15.56 12.53C15.64 12.53 15.71 12.5 15.77 12.45L18.65 9.95C18.69 9.93 18.76 9.92 18.78 9.92C18.82 9.94 18.85 10 18.85 10.02V17.84C18.85 17.89 18.82 17.94 18.77 17.95C18.72 17.95 18.66 17.93 18.64 17.91L9.93 7.53C9.79 7.36 9.42 7 8.79 7H8.49C7.71 7 6.99 7.72 6.99 8.49V19.5C6.99 20.28 7.71 21 8.66 20.98C9.1 20.95 9.64 20.48 9.76 20.28L12.69 15.94C12.74 15.84 12.74 15.72 12.7 15.62C12.63 15.53 12.49 15.46 12.43 15.46C12.35 15.46 12.28 15.49 12.22 15.54L9.34 18.04C9.31 18.06 9.27 18.06 9.25 18.06C9.22 18.06 9.16 18.02 9.16 18.01C9.14 17.97 9.14 10.13 9.14 10.13C9.14 10.08 9.19 10.03 9.22 10.02C9.27 10.02 9.33 10.04 9.35 10.06L18.05 20.48C18.19 20.65 18.56 21.01 19.19 21.01H19.49C20.27 21.01 20.98 20.29 20.98 19.52V8.51C20.98 8.11 20.82 7.46 20.54 7.46C19.53 7 18.87 7.13 18.68 7.25C18.49 7.37 18.33 7.53 18.21 7.73Z" fill="#fff"/></svg>',
+  tron: '<svg viewBox="0 0 28 28"><rect width="28" height="28" fill="#fff"/><path d="M21.8 10.65C21.01 9.92 19.92 8.81 19.03 8.02L18.98 7.98C18.89 7.91 18.79 7.85 18.69 7.82C16.54 7.42 6.55 5.55 6.35 5.58C6.3 5.58 6.24 5.61 6.2 5.64L6.15 5.68C6.09 5.74 6.04 5.82 6.01 5.9V6.15C7.13 9.28 11.57 19.54 12.44 21.95C12.49 22.11 12.59 22.42 12.78 22.44H12.82C12.92 22.44 13.35 21.88 13.35 21.88C13.35 21.88 20.98 12.63 21.75 11.64C21.85 11.52 21.94 11.39 22.01 11.25C22.05 11.03 21.97 10.81 21.8 10.66ZM15.3 11.73L18.56 9.03L20.47 10.79L15.3 11.73ZM14.03 11.55L8.42 6.96L17.49 8.63L14.03 11.55ZM14.54 12.75L20.28 11.83L13.72 19.73L14.54 12.75ZM7.66 7.41L13.56 12.42L12.71 19.74L7.66 7.41Z" fill="#FF060A"/></svg>',
+};
+
+const ASSETS = [
+  { symbol: 'USDC', chain: 'ethereum', name: 'USD Coin',        icon: '$',  color: '#2775CA', balance: 1240.00, usd: 1240.00 },
+  { symbol: 'ETH',  chain: 'ethereum', name: 'Ether',           icon: 'Ξ',  color: '#454A75', balance: 0.842,   usd: 2861.42 },
+  { symbol: 'USDT', chain: 'ethereum', name: 'Tether USD',      icon: '₮',  color: '#26A17B', balance: 512.30,  usd: 512.30 },
+  { symbol: 'WBTC', chain: 'ethereum', name: 'Wrapped Bitcoin', icon: '₿',  color: '#F09242', balance: 0.0214,  usd: 1421.86 },
+  { symbol: 'USDC', chain: 'base',     name: 'USD Coin',        icon: '$',  color: '#2775CA', balance: 310.55,  usd: 310.55 },
+  { symbol: 'ETH',  chain: 'base',     name: 'Ether',           icon: 'Ξ',  color: '#454A75', balance: 0.12,    usd: 407.88 },
+  { symbol: 'SOL',  chain: 'solana',   name: 'Solana',          icon: 'S',  color: '#9945FF', balance: 8.4,     usd: 1218.00 },
+  { symbol: 'USDC', chain: 'solana',   name: 'USD Coin',        icon: '$',  color: '#2775CA', balance: 154.20,  usd: 154.20 },
+  { symbol: 'BTC',  chain: 'bitcoin',  name: 'Bitcoin',         icon: '₿',  color: '#F7931A', balance: 0.0089,  usd: 591.29 },
+  { symbol: 'ARB',  chain: 'arbitrum', name: 'Arbitrum',        icon: 'A',  color: '#12AAFF', balance: 340.00,  usd: 156.40 },
+  { symbol: 'USDT', chain: 'arbitrum', name: 'Tether USD',      icon: '₮',  color: '#26A17B', balance: 88.00,   usd: 88.00 },
+  { symbol: 'NEAR', chain: 'near',     name: 'NEAR Protocol',   icon: 'N',  color: '#00C08B', balance: 210.00,  usd: 485.10 },
+  { symbol: 'USDT', chain: 'tron',     name: 'Tether USD',      icon: '₮',  color: '#26A17B', balance: 62.75,   usd: 62.75 },
+];
+
+let selectedAsset = ASSETS[0];
+let assetChainFilter = 'all';
+
+function chainOf(id) { return CHAINS.find(c => c.id === id); }
+
+function openAssetModal() {
+  document.getElementById('assetSearch').value = '';
+  assetChainFilter = 'all';
+  renderChainFilter();
+  renderAssets();
+  document.getElementById('assetOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('assetSearch').focus(), 180);
+}
+
+function openAssetModalWithChain(chainId) {
+  openAssetModal();
+  setChainFilter(chainId);
+}
+
+function closeAssetModal() {
+  document.getElementById('assetOverlay').classList.remove('open');
+}
+
+function chainAssetCount(id) {
+  return id === 'all' ? ASSETS.length : ASSETS.filter(a => a.chain === id).length;
+}
+
+function renderChainFilter() {
+  document.getElementById('chainFilter').innerHTML = CHAINS.map(c => `
+    <button class="chain-rail-item${assetChainFilter === c.id ? ' active' : ''}" onclick="setChainFilter('${c.id}')">
+      ${CHAIN_LOGOS[c.id]
+        ? `<span class="chain-rail-logo">${CHAIN_LOGOS[c.id]}</span>`
+        : `<span class="chain-rail-all"></span>`}
+      <span>${c.name}</span>
+      <span class="chain-rail-count">${chainAssetCount(c.id)}</span>
+    </button>`).join('');
+}
+
+function setChainFilter(id) {
+  assetChainFilter = id;
+  renderChainFilter();
+  renderAssets();
+}
+
+function renderAssets() {
+  const q = document.getElementById('assetSearch').value.trim().toLowerCase();
+  const list = ASSETS.filter(a =>
+    (assetChainFilter === 'all' || a.chain === assetChainFilter) &&
+    (!q || a.symbol.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) || chainOf(a.chain).name.toLowerCase().includes(q)));
+  document.getElementById('assetList').innerHTML = list.map(a => {
+    const ch = chainOf(a.chain);
+    const isSel = a.symbol === selectedAsset.symbol && a.chain === selectedAsset.chain;
+    return `
+    <button class="asset-row${isSel ? ' selected' : ''}" onclick="pickAsset('${a.symbol}','${a.chain}')">
+      <div class="asset-icon-wrap">
+        <div class="token-icon" style="background:${a.color};">${a.icon}</div>
+        <span class="chain-badge" title="${ch.name}">${CHAIN_LOGOS[a.chain] || ''}</span>
+      </div>
+      <div class="asset-info">
+        <div class="asset-symbol">${a.symbol}</div>
+        <div class="asset-name">${a.name} · <span class="asset-chain-label">on ${ch.name}</span></div>
+      </div>
+      <div class="asset-balance">
+        <div class="asset-bal-amount">${a.balance.toLocaleString('en-US', {maximumFractionDigits: 4})}</div>
+        <div class="asset-bal-usd">$${a.usd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+      </div>
+    </button>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:14px;">No assets found</div>';
+}
+
+function pickAsset(symbol, chain) {
+  selectedAsset = ASSETS.find(a => a.symbol === symbol && a.chain === chain);
+  const ch = chainOf(chain);
+  document.getElementById('selTokenIcon').style.background = selectedAsset.color;
+  document.getElementById('selTokenIcon').textContent = selectedAsset.icon;
+  document.getElementById('selTokenName').textContent = selectedAsset.symbol;
+  document.querySelector('.aw-on-chain').textContent = `on ${ch.name}`;
+  document.querySelector('.aw-balance').textContent =
+    `Balance: ${selectedAsset.balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 4})} ${selectedAsset.symbol}`;
+  // sync the "Deposit from" chips in the widget
+  document.querySelectorAll('.aw-chain-row .aw-chain-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.textContent.trim() === ch.name);
+  });
+  resetSteps();
+  closeAssetModal();
+  updateEstimate();
+}
+
+/* ── Two-step deposit flow (single button, changes per step) ── */
+const CHECK_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+let depositStep = 1; // 1 = approve, 2 = send, 3 = done
+
+function runStep() {
+  const btn = document.getElementById('actionBtn');
+  if (depositStep === 1) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Approving…';
+    setTimeout(() => {
+      // mark step 1 done, advance indicator to step 2
+      document.getElementById('stepItem1').classList.remove('active');
+      document.getElementById('stepItem1').classList.add('done');
+      document.getElementById('stepNum1').innerHTML = '✓';
+      document.getElementById('stepLine').classList.add('done');
+      document.getElementById('stepItem2').classList.add('active');
+      depositStep = 2;
+      btn.disabled = false;
+      btn.textContent = 'Send assets';
+    }, 1400);
+  } else if (depositStep === 2) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending…';
+    setTimeout(() => {
+      document.getElementById('stepItem2').classList.remove('active');
+      document.getElementById('stepItem2').classList.add('done');
+      document.getElementById('stepNum2').innerHTML = '✓';
+      depositStep = 3;
+      btn.classList.add('done');
+      btn.style.cursor = 'default';
+      btn.innerHTML = CHECK_SVG + ' Deposit sent — settling on Base';
+    }, 1800);
+  }
+}
+
+function resetSteps() {
+  depositStep = 1;
+  const btn = document.getElementById('actionBtn');
+  btn.classList.remove('done'); btn.disabled = false;
+  btn.style.cursor = 'pointer';
+  btn.textContent = 'Approve deposit';
+  document.getElementById('stepItem1').className = 'step-item active';
+  document.getElementById('stepNum1').textContent = '1';
+  document.getElementById('stepLine').classList.remove('done');
+  document.getElementById('stepItem2').className = 'step-item';
+  document.getElementById('stepNum2').textContent = '2';
+  clearTimeout(qrPollTimer);
+  document.getElementById('qrPanel').classList.remove('visible');
+  document.getElementById('depositForm').style.display = 'block';
+}
+
+document.getElementById('assetOverlay').addEventListener('click', function(e) { if (e.target === this) closeAssetModal(); });
+
+const pools = [
+  { pair: 'cbETH/WETH', tokens: [{s:'cbE',c:'#5C8EFF',sym:'cbETH',price:3550},{s:'Ξ',c:'#454A75',sym:'WETH',price:3400}], tvl: '$2,581,054.6', apr: '6.61%' },
+  { pair: 'WETH/cbBTC', tokens: [{s:'Ξ',c:'#454A75',sym:'WETH',price:3400},{s:'₿',c:'#0052FF',sym:'cbBTC',price:66500}], tvl: '$1,777,973.01', apr: '2.18%' },
+  { pair: 'USDC',       tokens: [{s:'$',c:'#2775CA',sym:'USDC',price:1}], tvl: '$992,681.4', apr: '3.88%' },
+  { pair: 'HYDX/USDC',  tokens: [{s:'H',c:'#0052FF',sym:'HYDX',price:0.46},{s:'$',c:'#2775CA',sym:'USDC',price:1}], tvl: '$611,888.07', apr: '15.49%' },
+  { pair: 'WETH/USDC',  tokens: [{s:'Ξ',c:'#454A75',sym:'WETH',price:3400},{s:'$',c:'#2775CA',sym:'USDC',price:1}], tvl: '$416,333.01', apr: '12.71%' },
+  { pair: 'fxUSD/USDC', tokens: [{s:'fx',c:'#3A9B5C',sym:'fxUSD',price:1},{s:'$',c:'#2775CA',sym:'USDC',price:1}], tvl: '$304,422.74', apr: '10.51%' },
+];
+
+let activePool = null;
+
+function iconsHTML(tokens, sm) {
+  return tokens.map(t => `<div class="token-icon${sm ? ' sm' : ''}" style="background:${t.c};">${t.s}</div>`).join('');
+}
+
+function renderPools() {
+  const tbody = document.getElementById('poolTable');
+  tbody.innerHTML = pools.map((p, i) => `
+    <tr>
+      <td><div class="pair-cell"><div class="token-icons">${iconsHTML(p.tokens)}</div><span class="pair-name">${p.pair}</span></div></td>
+      <td class="tvl">${p.tvl}</td>
+      <td class="apr">${p.apr}</td>
+      <td class="td-hide-sm">0</td>
+      <td class="td-hide-sm">0</td>
+      <td style="text-align:right;padding-right:28px;"><button class="btn-deposit" data-pool="${i}">Deposit</button></td>
+    </tr>`).join('');
+  document.querySelectorAll('.btn-deposit').forEach(btn =>
+    btn.addEventListener('click', () => openModal(parseInt(btn.dataset.pool))));
+}
+
+function openModal(i) {
+  const p = pools[i];
+  activePool = p;
+  document.getElementById('modalTitle').textContent = p.pair;
+  document.getElementById('modalIcons').innerHTML = iconsHTML(p.tokens);
+  document.querySelectorAll('[data-pair]').forEach(el => el.textContent = p.pair.replace('/', ' / '));
+  document.querySelectorAll('[data-icons]').forEach(el => el.innerHTML = iconsHTML(p.tokens, true));
+  showPhase('choose');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => showPhase('choose'), 250);
+}
+
+function showPhase(phase) {
+  document.getElementById('phaseChoose').style.display = phase === 'choose' ? 'block' : 'none';
+  document.getElementById('phaseWidget').classList.toggle('visible', phase === 'widget');
+}
+
+function selectMethod(m) {
+  if (m === 'xchain') { resetSteps(); showPhase('widget'); updateEstimate(); }
+  else {
+    const names = { manual: 'Manual', ichi: 'ICHI Single Sided', classic: 'Classic' };
+    alert(`Opening ${names[m]} deposit flow…\n\n(In the real app this continues to the existing deposit UI.)`);
+  }
+}
+
+function backToChoose() { showPhase('choose'); }
+
+function fmtUsd(n) { return `$${n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`; }
+
+function updateEstimate() {
+  const raw = parseFloat(document.getElementById('widgetAmount').value) || 0;
+  const srcPrice = selectedAsset.balance > 0 ? selectedAsset.usd / selectedAsset.balance : 1;
+  const srcUsd = raw * srcPrice;
+  const SLIPPAGE_FACTOR = 0.9965;
+  const destUsd = srcUsd * SLIPPAGE_FACTOR;
+  const pool = activePool || pools[3];
+
+  document.getElementById('srcUsdValue').textContent = fmtUsd(srcUsd);
+  document.getElementById('destLabel').textContent = `Pool receives on Base — ${pool.pair}`;
+
+  const slippagePct = srcUsd > 0 ? ((srcUsd - destUsd) / srcUsd) * 100 : 0;
+  document.getElementById('destSlippage').textContent = `≈ ${slippagePct.toFixed(2)}% slippage`;
+
+  const split = document.getElementById('destSplit');
+
+  if (pool.tokens.length < 2) {
+    const t = pool.tokens[0];
+    const amt = t.price ? destUsd / t.price : destUsd;
+    split.innerHTML = `
+      <div class="aw-dest-row">
+        <div>
+          <div class="aw-dest-amount">${amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          <div class="aw-dest-chain">${t.sym} · Base · deposited straight into the pool</div>
+        </div>
+      </div>
+      <div class="dest-split-total">
+        <span>Total value received</span>
+        <span class="dest-split-total-val">${fmtUsd(destUsd)}</span>
+      </div>`;
+    return;
+  }
+
+  const [a, b] = pool.tokens;
+  const usdA = destUsd * 0.5;
+  const usdB = destUsd * 0.5;
+  const amtA = usdA / (a.price || 1);
+  const amtB = usdB / (b.price || 1);
+
+  split.innerHTML = `
+    <div class="dest-split-list">
+      <div class="dest-split-row">
+        <div class="dest-split-left">
+          <div class="token-icon sm" style="background:${a.c};">${a.s}</div>
+          <span class="dest-split-sym">${a.sym}</span>
+        </div>
+        <div class="dest-split-right">
+          <div class="dest-split-amt-group">
+            <span class="dest-split-amt">${amtA.toLocaleString('en-US', {maximumFractionDigits: amtA < 1 ? 5 : 2})}</span>
+            <span class="dest-split-usd">${fmtUsd(usdA)}</span>
+          </div>
+          <span class="dest-split-pct">50%</span>
+        </div>
+      </div>
+      <div class="dest-split-divider"></div>
+      <div class="dest-split-row">
+        <div class="dest-split-left">
+          <div class="token-icon sm" style="background:${b.c};">${b.s}</div>
+          <span class="dest-split-sym">${b.sym}</span>
+        </div>
+        <div class="dest-split-right">
+          <div class="dest-split-amt-group">
+            <span class="dest-split-amt">${amtB.toLocaleString('en-US', {maximumFractionDigits: amtB < 1 ? 5 : 2})}</span>
+            <span class="dest-split-usd">${fmtUsd(usdB)}</span>
+          </div>
+          <span class="dest-split-pct">50%</span>
+        </div>
+      </div>
+      <div class="dest-split-total">
+        <span>Total value received</span>
+        <span class="dest-split-total-val">${fmtUsd(destUsd)}</span>
+      </div>
+    </div>`;
+}
+
+/* ── QR deposit panel ── */
+let qrPollTimer = null;
+
+const CHAIN_ADDR_FORMATS = {
+  ethereum: () => '0x' + hexFromSeed(40),
+  base:     () => '0x' + hexFromSeed(40),
+  arbitrum: () => '0x' + hexFromSeed(40),
+  solana:   () => base58FromSeed(44),
+  bitcoin:  () => 'bc1q' + base58FromSeed(38),
+  near:     () => 'hydrex-deposit-' + hexFromSeed(6) + '.near',
+  tron:     () => 'T' + base58FromSeed(33),
+};
+
+function seededRandom(seed) {
+  let s = seed;
+  return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+
+function hexFromSeed(len) {
+  const rnd = seededRandom(Date.now() % 100000 + len);
+  let out = '';
+  const chars = '0123456789abcdef';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(rnd() * 16)];
+  return out;
+}
+
+function base58FromSeed(len) {
+  const rnd = seededRandom(Date.now() % 100000 + len * 7);
+  const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(rnd() * chars.length)];
+  return out;
+}
+
+function truncateAddress(addr) {
+  if (addr.length <= 16) return addr;
+  return addr.slice(0, 8) + '…' + addr.slice(-6);
+}
+
+function openQrPanel() {
+  clearTimeout(qrPollTimer);
+  const ch = chainOf(selectedAsset.chain);
+  const raw = parseFloat(document.getElementById('widgetAmount').value) || 0;
+
+  document.getElementById('qrAmount').textContent = `${raw.toLocaleString('en-US', {maximumFractionDigits: 4})} ${selectedAsset.symbol}`;
+  document.getElementById('qrChainDot').style.background = ch.color;
+  document.getElementById('qrChainLabel').textContent = `Send on ${ch.name} only`;
+  document.getElementById('qrWarnAsset').textContent = selectedAsset.symbol;
+  document.getElementById('qrWarnChain').textContent = ch.name;
+
+  const genAddr = CHAIN_ADDR_FORMATS[ch.id] || CHAIN_ADDR_FORMATS.ethereum;
+  const fullAddress = genAddr();
+  document.getElementById('qrAddress').textContent = truncateAddress(fullAddress);
+  document.getElementById('qrAddress').dataset.full = fullAddress;
+
+  const copyBtn = document.getElementById('qrCopyBtn');
+  copyBtn.classList.remove('copied');
+  copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+
+  const status = document.getElementById('qrStatus');
+  status.className = 'qr-status';
+  status.innerHTML = '<span class="qr-pulse-dot"></span> Waiting for deposit…';
+
+  drawQrPattern(document.getElementById('qrCanvas'), fullAddress + raw);
+
+  document.getElementById('depositForm').style.display = 'none';
+  document.getElementById('qrPanel').classList.add('visible');
+
+  qrPollTimer = setTimeout(() => {
+    status.className = 'qr-status detected';
+    status.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Deposit detected — settling on Base';
+  }, 4500);
+}
+
+function closeQrPanel() {
+  clearTimeout(qrPollTimer);
+  document.getElementById('qrPanel').classList.remove('visible');
+  document.getElementById('depositForm').style.display = 'block';
+}
+
+function copyQrAddress() {
+  const full = document.getElementById('qrAddress').dataset.full || '';
+  navigator.clipboard.writeText(full);
+  const btn = document.getElementById('qrCopyBtn');
+  btn.classList.add('copied');
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+  }, 1800);
+}
+
+function drawQrPattern(canvas, seedStr) {
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  const modules = 25;
+  const cell = size / modules;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#0D0F14';
+
+  let seed = 0;
+  for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) & 0xffffffff;
+  const rnd = seededRandom(seed || 42);
+
+  const grid = Array.from({length: modules}, () => Array(modules).fill(0));
+
+  function stampFinder(r0, c0) {
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) {
+      const border = r === 0 || r === 6 || c === 0 || c === 6;
+      const inner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+      grid[r0 + r][c0 + c] = (border || inner) ? 1 : 0;
+    }
+  }
+  stampFinder(0, 0);
+  stampFinder(0, modules - 7);
+  stampFinder(modules - 7, 0);
+
+  for (let r = 0; r < modules; r++) {
+    for (let c = 0; c < modules; c++) {
+      const inFinderZone =
+        (r < 8 && c < 8) || (r < 8 && c >= modules - 8) || (r >= modules - 8 && c < 8);
+      if (inFinderZone) continue;
+      grid[r][c] = rnd() > 0.56 ? 1 : 0;
+    }
+  }
+
+  for (let r = 0; r < modules; r++) {
+    for (let c = 0; c < modules; c++) {
+      if (grid[r][c]) ctx.fillRect(c * cell, r * cell, cell - 0.6, cell - 0.6);
+    }
+  }
+}
+
+document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('assetOverlay').classList.contains('open')) closeAssetModal();
+  else closeModal();
+});
+
+renderPools();
+</script>
