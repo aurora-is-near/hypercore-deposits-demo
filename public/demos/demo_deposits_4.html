@@ -1528,7 +1528,20 @@ button { font-family: inherit; }
             <div id="rpMinNeeded"></div>
           </div>
 
-          <button class="rp-cta" id="rpCta" onclick="rpDeposit()">Swap &amp; Deposit</button>
+          <div class="steps-row" id="rpStepsRow" style="margin-top:16px;">
+            <div class="step-item active" id="rpStepItem1"><span class="step-num" id="rpStepNum1">1</span>Approve deposit</div>
+            <span class="step-line" id="rpStepLine"></span>
+            <div class="step-item" id="rpStepItem2"><span class="step-num" id="rpStepNum2">2</span>Send assets</div>
+          </div>
+          <button class="rp-cta" id="rpCta" onclick="rpDeposit()" style="margin-top:0;">Approve deposit</button>
+
+          <div class="aw-or-divider">
+            <span class="aw-or-line"></span><span class="aw-or-text">or</span><span class="aw-or-line"></span>
+          </div>
+          <button class="aw-qr-btn" onclick="rpShowQr()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+            Deposit via QR code — no wallet connect needed
+          </button>
         </div>
       </div>
     </div>
@@ -1559,7 +1572,20 @@ button { font-family: inherit; }
 
       <div class="rp-intents-note" id="ssIntentsNote" style="margin-top:14px;"></div>
 
-      <button class="rp-cta" id="ssCta" onclick="ssDeposit()" style="margin-top:16px;">Deposit</button>
+      <div class="steps-row" id="ssStepsRow" style="margin-top:16px;">
+        <div class="step-item active" id="ssStepItem1"><span class="step-num" id="ssStepNum1">1</span>Approve deposit</div>
+        <span class="step-line" id="ssStepLine"></span>
+        <div class="step-item" id="ssStepItem2"><span class="step-num" id="ssStepNum2">2</span>Send assets</div>
+      </div>
+      <button class="rp-cta" id="ssCta" onclick="ssDeposit()" style="margin-top:0;">Approve deposit</button>
+
+      <div class="aw-or-divider">
+        <span class="aw-or-line"></span><span class="aw-or-text">or</span><span class="aw-or-line"></span>
+      </div>
+      <button class="aw-qr-btn" onclick="ssShowQr()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+        Deposit via QR code — no wallet connect needed
+      </button>
 
       <!-- Strategy Info -->
       <div class="ss-info">
@@ -2073,7 +2099,7 @@ function updateSingle() {
   } else {
     note.classList.remove('show');
   }
-  resetDepo('ssCta', singleSel);
+  resetStepFlow('ss', singleSel);
 }
 
 function ssMaxClick() {
@@ -2081,65 +2107,69 @@ function ssMaxClick() {
   updateSingle();
 }
 
-function ssDeposit() { runDepoStep('ssCta', singleSel); }
+function ssDeposit() { runSend('ss', singleSel); }
+function rpShowQr() { openQrModal(rangeSel); }
+function ssShowQr() { openQrModal(singleSel); }
 
 function openAssetModalForSingle() { pickerTarget = 'single'; openAssetModal(); }
 
-/* ── Shared two-step deposit engine (approve → confirm | QR) ──
-   depoState[btnId] = { step, sel }
-   Path A (wallet supports the asset's chain): approve → confirm deposit
-   Path B (unsupported): approve → show QR deposit address */
-const depoState = {};
+/* ── Wallet deposit: two-step Approve → Send assets (per screen: 'rp' | 'ss') ──
+   The QR-code option below the button is always available.
+   Unsupported (non-EVM) assets can't be signed, so the wallet button is
+   disabled and only the QR path applies. */
+const stepFlows = {};
 const SPIN = '<span class="spinner"></span>';
 const CHECK15 = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-const QR_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>';
 
-function ctaInitialLabel(btnId, sel) {
-  if (btnId === 'rpCta') return sel && sel.viaIntents ? 'Deposit with Intents' : 'Swap & Deposit';
-  return sel && sel.viaIntents ? 'Deposit with Intents' : 'Deposit';
-}
+function stepEl(key, n) { return document.getElementById(key + 'StepItem' + n); }
 
-function resetDepo(btnId, sel) {
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
-  depoState[btnId] = { step: 0, sel };
-  btn.disabled = false;
+function resetStepFlow(key, sel) {
+  stepFlows[key] = { step: 0 };
+  const btn = document.getElementById(key + 'Cta');
   btn.classList.remove('done');
-  btn.classList.toggle('intents', !!(sel && sel.viaIntents));
-  btn.textContent = ctaInitialLabel(btnId, sel);
+  btn.style.cursor = 'pointer';
+  stepEl(key, 1).className = 'step-item active';
+  document.getElementById(key + 'StepNum1').textContent = '1';
+  document.getElementById(key + 'StepLine').classList.remove('done');
+  stepEl(key, 2).className = 'step-item';
+  document.getElementById(key + 'StepNum2').textContent = '2';
+  const supported = !sel || sel.walletSupported;
+  if (supported) {
+    btn.disabled = false;
+    btn.textContent = 'Approve deposit';
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'Wallet can’t sign this asset';
+  }
 }
 
-function runDepoStep(btnId, sel) {
-  const btn = document.getElementById(btnId);
-  const st = depoState[btnId] || { step: 0, sel };
-  st.sel = sel;
-  const supported = !sel || sel.walletSupported;
-
+function runSend(key, sel) {
+  const btn = document.getElementById(key + 'Cta');
+  const st = stepFlows[key] || { step: 0 };
   if (st.step === 0) {
-    // Step 1 — approve
-    st.step = 1; depoState[btnId] = st;
+    st.step = 1; stepFlows[key] = st;
     btn.disabled = true;
     btn.innerHTML = SPIN + ' Approving…';
     setTimeout(() => {
-      btn.disabled = false;
+      stepEl(key, 1).className = 'step-item done';
+      document.getElementById(key + 'StepNum1').innerHTML = '✓';
+      document.getElementById(key + 'StepLine').classList.add('done');
+      stepEl(key, 2).className = 'step-item active';
       st.step = 2;
-      btn.innerHTML = supported ? 'Confirm deposit' : (QR_ICON + ' Show deposit address');
+      btn.disabled = false;
+      btn.textContent = 'Send assets';
     }, 1200);
   } else if (st.step === 2) {
-    if (supported) {
-      // Step 2A — confirm deposit from wallet
-      btn.disabled = true;
-      btn.innerHTML = SPIN + ' Confirming…';
-      setTimeout(() => {
-        st.step = 3;
-        btn.classList.add('done');
-        btn.style.cursor = 'default';
-        btn.innerHTML = CHECK15 + ' Deposit confirmed';
-      }, 1400);
-    } else {
-      // Step 2B — manual deposit: show the QR address modal
-      openQrModal(sel);
-    }
+    st.step = 3;
+    btn.disabled = true;
+    btn.innerHTML = SPIN + ' Sending…';
+    setTimeout(() => {
+      stepEl(key, 2).className = 'step-item done';
+      document.getElementById(key + 'StepNum2').innerHTML = '✓';
+      btn.classList.add('done');
+      btn.style.cursor = 'default';
+      btn.innerHTML = CHECK15 + ' Deposit sent — settling on Base';
+    }, 1600);
   }
 }
 
@@ -2274,7 +2304,7 @@ function updateRange() {
   } else {
     note.classList.remove('show');
   }
-  resetDepo('rpCta', rangeSel);
+  resetStepFlow('rp', rangeSel);
 }
 
 function pickPreset(btn, i) {
@@ -2297,7 +2327,7 @@ function rpMaxClick() {
   updateRange();
 }
 
-function rpDeposit() { runDepoStep('rpCta', rangeSel); }
+function rpDeposit() { runSend('rp', rangeSel); }
 
 function drawRangeChart() {
   const canvas = document.getElementById('rpChartCanvas');
