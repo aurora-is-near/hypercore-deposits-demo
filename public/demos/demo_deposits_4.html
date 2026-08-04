@@ -652,10 +652,38 @@ button { font-family: inherit; }
   width: 100%; margin-top: 16px; padding: 14px; border-radius: 12px;
   border: none; cursor: pointer; font-size: 15px; font-weight: 700; color: white;
   background: #7B93F5; font-family: inherit; transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 .rp-cta:hover { background: #6B84EE; }
+.rp-cta:disabled { opacity: 0.75; cursor: default; }
 .rp-cta.intents { background: var(--aurora); }
 .rp-cta.intents:hover { background: var(--aurora-dark); }
+.rp-cta.done, .rp-cta.done:hover { background: var(--aurora); cursor: default; }
+
+/* asset row "QR only" badge */
+.qr-only-badge {
+  display: inline-block; vertical-align: middle;
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+  color: #B7791F; background: #FEF3C7; border: 1px solid #FCE29B;
+  padding: 1px 6px; border-radius: 9999px; margin-left: 6px;
+}
+
+/* unsupported-asset info banner in the asset modal */
+.qr-only-info {
+  display: none; align-items: center; gap: 11px;
+  margin: 0 16px 14px; padding: 12px 14px;
+  background: #FEF9EC; border: 1px solid #FCE29B; border-radius: 12px;
+}
+.qr-only-info.show { display: flex; }
+.qr-only-info svg { flex-shrink: 0; }
+.qr-only-text { flex: 1; font-size: 12.5px; color: #92702A; line-height: 1.4; }
+.qr-only-text b { color: var(--text); font-weight: 700; }
+.qr-only-continue {
+  flex-shrink: 0; border: none; background: var(--blue); color: white;
+  font-size: 12.5px; font-weight: 700; padding: 8px 14px; border-radius: 9999px;
+  cursor: pointer; font-family: inherit; transition: background 0.15s;
+}
+.qr-only-continue:hover { background: var(--accent-hover, #1445E0); }
 
 .zap-toggle {
   display: inline-flex; align-items: center; gap: 5px;
@@ -1568,6 +1596,40 @@ button { font-family: inherit; }
       <div class="chain-rail" id="chainFilter"></div>
       <div class="asset-list" id="assetList"></div>
     </div>
+    <!-- info banner shown when an unsupported asset is selected -->
+    <div class="qr-only-info" id="qrOnlyInfo">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B7791F" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <div class="qr-only-text"><b id="qrOnlyMsg"></b> Deposits for this asset are made by sending to a QR address — no wallet signature needed.</div>
+      <button class="qr-only-continue" onclick="confirmUnsupported()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR DEPOSIT MODAL -->
+<div class="asset-overlay" id="qrOverlay">
+  <div class="asset-modal" style="max-width:400px;">
+    <div class="asset-modal-header">
+      <span class="asset-modal-title">Deposit via QR code</span>
+      <button class="modal-close" onclick="closeQrModal()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div style="padding:0 22px 22px;">
+      <div class="qr-intro">
+        <div class="qr-intro-sub">Send <b id="qmAmount">0</b> from any wallet or exchange</div>
+      </div>
+      <div class="qr-code-wrap"><canvas id="qmCanvas" width="168" height="168"></canvas></div>
+      <div class="qr-chain-tag"><span class="aw-chain-dot" id="qmChainDot"></span><span id="qmChainLabel"></span></div>
+      <div class="qr-address-box">
+        <span class="qr-address-text" id="qmAddress"></span>
+        <button class="qr-copy-btn" id="qmCopyBtn" onclick="copyQmAddress()"></button>
+      </div>
+      <div class="qr-warning">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#926B0A" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span>Only send <b id="qmWarnAsset"></b> on <b id="qmWarnChain"></b> to this address. Sending any other asset or using the wrong network may result in permanent loss.</span>
+      </div>
+      <div class="qr-status" id="qmStatus"><span class="qr-pulse-dot"></span> Waiting for deposit…</div>
+    </div>
   </div>
 </div>
 
@@ -1618,6 +1680,8 @@ function chainOf(id) { return CHAINS.find(c => c.id === id); }
 function openAssetModal() {
   document.getElementById('assetSearch').value = '';
   assetChainFilter = 'all';
+  pendingPick = null;
+  hideQrOnlyInfo();
   renderChainFilter();
   renderAssets();
   document.getElementById('assetOverlay').classList.add('open');
@@ -1669,7 +1733,7 @@ function renderAssets() {
         <span class="chain-badge" title="${ch.name}">${CHAIN_LOGOS[a.chain] || ''}</span>
       </div>
       <div class="asset-info">
-        <div class="asset-symbol">${a.symbol}</div>
+        <div class="asset-symbol">${a.symbol} ${isWalletSupported(a.chain) ? '' : '<span class="qr-only-badge">QR only</span>'}</div>
         <div class="asset-name">${a.name} · <span class="asset-chain-label">on ${ch.name}</span></div>
       </div>
       <div class="asset-balance">
@@ -1684,23 +1748,35 @@ let pickerTarget = 'intents';
 function openAssetModalForIntents() { pickerTarget = 'intents'; openAssetModal(); }
 function openAssetModalForRange() { pickerTarget = 'range'; openAssetModal(); }
 
-function pickAsset(symbol, chain) {
+/* The connected wallet is an EVM wallet — it can sign on EVM chains only.
+   Assets on non-EVM chains can only be deposited by sending to a QR address. */
+const WALLET_CHAINS = ['ethereum', 'base', 'arbitrum'];
+function isWalletSupported(chain) { return WALLET_CHAINS.includes(chain); }
+
+let pendingPick = null; // an unsupported asset staged, awaiting "Continue"
+
+function pickAsset(symbol, chain, confirmedUnsupported) {
+  const supported = isWalletSupported(chain);
+  if (!supported && !confirmedUnsupported) {
+    pendingPick = { symbol, chain };
+    showQrOnlyInfo(symbol, chain);
+    return;
+  }
+  hideQrOnlyInfo();
+  pendingPick = null;
+
   selectedAsset = ASSETS.find(a => a.symbol === symbol && a.chain === chain);
   const ch = chainOf(chain);
 
   if (pickerTarget === 'range') {
-    // Manual range screen: set the Deposit-Tokens dropdown to this asset
     const pool = activePool || pools[3];
     const poolSyms = pool.tokens.map(t => t.sym);
     const isNativeBase = chain === 'base' && poolSyms.includes(symbol);
     rangeSel = {
-      sym: selectedAsset.symbol,
-      s: selectedAsset.icon,
-      c: selectedAsset.color,
+      sym: selectedAsset.symbol, s: selectedAsset.icon, c: selectedAsset.color,
       price: selectedAsset.balance > 0 ? selectedAsset.usd / selectedAsset.balance : 1,
-      chain, chainName: ch.name,
-      balance: selectedAsset.balance,
-      viaIntents: !isNativeBase,
+      chain, chainName: ch.name, balance: selectedAsset.balance,
+      viaIntents: !isNativeBase, walletSupported: supported,
     };
     applyRangeToken();
     updateRange();
@@ -1713,13 +1789,10 @@ function pickAsset(symbol, chain) {
     const poolSyms = pool.tokens.map(t => t.sym);
     const isNativeBase = chain === 'base' && poolSyms.includes(symbol);
     singleSel = {
-      sym: selectedAsset.symbol,
-      s: selectedAsset.icon,
-      c: selectedAsset.color,
+      sym: selectedAsset.symbol, s: selectedAsset.icon, c: selectedAsset.color,
       price: selectedAsset.balance > 0 ? selectedAsset.usd / selectedAsset.balance : 1,
-      chain, chainName: ch.name,
-      balance: selectedAsset.balance,
-      viaIntents: !isNativeBase,
+      chain, chainName: ch.name, balance: selectedAsset.balance,
+      viaIntents: !isNativeBase, walletSupported: supported,
     };
     applySingleToken();
     updateSingle();
@@ -1955,7 +2028,7 @@ function openSingle(idx) {
   singleDepositIdx = idx;
   activeStrat = { key: 'ichi' + idx, name: 'ICHI Single Sided' };
   const depTok = pool.tokens[idx];
-  singleSel = { sym: depTok.sym, s: depTok.s, c: depTok.c, price: depTok.price || 1, chain: 'base', chainName: 'Base', balance: 0, viaIntents: false };
+  singleSel = { sym: depTok.sym, s: depTok.s, c: depTok.c, price: depTok.price || 1, chain: 'base', chainName: 'Base', balance: 0, viaIntents: false, walletSupported: true };
   document.getElementById('modalSubtitle').innerHTML = '<span class="strat-tag" style="font-size:11px;padding:2px 9px;">Single Sided</span>';
   document.getElementById('ssAmount').value = '0';
   applySingleToken();
@@ -1993,17 +2066,14 @@ function updateSingle() {
   document.getElementById('ssBalance').textContent = (singleSel.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 
   const note = document.getElementById('ssIntentsNote');
-  const cta = document.getElementById('ssCta');
   if (singleSel.viaIntents) {
     note.classList.add('show');
-    note.innerHTML = `Paying with <b>${singleSel.sym} on ${singleSel.chainName}</b> — routed via <span class="via"><svg width="11" height="11" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>Aurora Intents</span>, then single-sided deposited into <b>${a.sym}/${b.sym}</b> on Base. No bridging, no gas on Base.`;
-    cta.classList.add('intents');
-    cta.textContent = 'Deposit with Intents';
+    const qrLine = singleSel.walletSupported ? '' : ` <b>Your wallet can't sign on ${singleSel.chainName}</b> — you'll complete this by sending to a QR deposit address.`;
+    note.innerHTML = `Paying with <b>${singleSel.sym} on ${singleSel.chainName}</b> — routed via <span class="via"><svg width="11" height="11" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>Aurora Intents</span>, then single-sided deposited into <b>${a.sym}/${b.sym}</b> on Base.${qrLine}`;
   } else {
     note.classList.remove('show');
-    cta.classList.remove('intents');
-    cta.textContent = 'Deposit';
   }
+  resetDepo('ssCta', singleSel);
 }
 
 function ssMaxClick() {
@@ -2011,15 +2081,133 @@ function ssMaxClick() {
   updateSingle();
 }
 
-function ssDeposit() {
-  if (singleSel.viaIntents) {
-    alert(`Deposit with Aurora Intents\n\nPay ${document.getElementById('ssAmount').value || 0} ${singleSel.sym} on ${singleSel.chainName} → Intents single-sided deposits it into the ICHI vault on Base.`);
-  } else {
-    alert('Deposit\n\n(Native ICHI single-sided zap — Base only.)');
+function ssDeposit() { runDepoStep('ssCta', singleSel); }
+
+function openAssetModalForSingle() { pickerTarget = 'single'; openAssetModal(); }
+
+/* ── Shared two-step deposit engine (approve → confirm | QR) ──
+   depoState[btnId] = { step, sel }
+   Path A (wallet supports the asset's chain): approve → confirm deposit
+   Path B (unsupported): approve → show QR deposit address */
+const depoState = {};
+const SPIN = '<span class="spinner"></span>';
+const CHECK15 = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const QR_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>';
+
+function ctaInitialLabel(btnId, sel) {
+  if (btnId === 'rpCta') return sel && sel.viaIntents ? 'Deposit with Intents' : 'Swap & Deposit';
+  return sel && sel.viaIntents ? 'Deposit with Intents' : 'Deposit';
+}
+
+function resetDepo(btnId, sel) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  depoState[btnId] = { step: 0, sel };
+  btn.disabled = false;
+  btn.classList.remove('done');
+  btn.classList.toggle('intents', !!(sel && sel.viaIntents));
+  btn.textContent = ctaInitialLabel(btnId, sel);
+}
+
+function runDepoStep(btnId, sel) {
+  const btn = document.getElementById(btnId);
+  const st = depoState[btnId] || { step: 0, sel };
+  st.sel = sel;
+  const supported = !sel || sel.walletSupported;
+
+  if (st.step === 0) {
+    // Step 1 — approve
+    st.step = 1; depoState[btnId] = st;
+    btn.disabled = true;
+    btn.innerHTML = SPIN + ' Approving…';
+    setTimeout(() => {
+      btn.disabled = false;
+      st.step = 2;
+      btn.innerHTML = supported ? 'Confirm deposit' : (QR_ICON + ' Show deposit address');
+    }, 1200);
+  } else if (st.step === 2) {
+    if (supported) {
+      // Step 2A — confirm deposit from wallet
+      btn.disabled = true;
+      btn.innerHTML = SPIN + ' Confirming…';
+      setTimeout(() => {
+        st.step = 3;
+        btn.classList.add('done');
+        btn.style.cursor = 'default';
+        btn.innerHTML = CHECK15 + ' Deposit confirmed';
+      }, 1400);
+    } else {
+      // Step 2B — manual deposit: show the QR address modal
+      openQrModal(sel);
+    }
   }
 }
 
-function openAssetModalForSingle() { pickerTarget = 'single'; openAssetModal(); }
+/* ── QR deposit modal ── */
+function openQrModal(sel) {
+  const rangeVisible = document.getElementById('phaseRange').classList.contains('visible');
+  const raw = parseFloat((rangeVisible
+    ? document.getElementById('rpAmount')
+    : document.getElementById('ssAmount')).value) || 0;
+  const ch = chainOf(sel.chain);
+  document.getElementById('qmAmount').textContent = `${raw.toLocaleString('en-US', { maximumFractionDigits: 4 })} ${sel.sym}`;
+  document.getElementById('qmChainDot').style.background = ch.color;
+  document.getElementById('qmChainLabel').textContent = `Send on ${ch.name} only`;
+  document.getElementById('qmWarnAsset').textContent = sel.sym;
+  document.getElementById('qmWarnChain').textContent = ch.name;
+
+  const gen = CHAIN_ADDR_FORMATS[sel.chain] || CHAIN_ADDR_FORMATS.ethereum;
+  const full = gen();
+  document.getElementById('qmAddress').textContent = truncateAddress(full);
+  document.getElementById('qmAddress').dataset.full = full;
+
+  const copyBtn = document.getElementById('qmCopyBtn');
+  copyBtn.classList.remove('copied');
+  copyBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+
+  const status = document.getElementById('qmStatus');
+  status.className = 'qr-status';
+  status.innerHTML = '<span class="qr-pulse-dot"></span> Waiting for deposit…';
+
+  drawQrPattern(document.getElementById('qmCanvas'), full + raw);
+  document.getElementById('qrOverlay').classList.add('open');
+
+  clearTimeout(window.__qmTimer);
+  window.__qmTimer = setTimeout(() => {
+    status.className = 'qr-status detected';
+    status.innerHTML = CHECK15.replace(/white/, 'currentColor') + ' Deposit detected — settling on Base';
+  }, 4500);
+}
+
+function closeQrModal() {
+  clearTimeout(window.__qmTimer);
+  document.getElementById('qrOverlay').classList.remove('open');
+}
+
+function copyQmAddress() {
+  const full = document.getElementById('qmAddress').dataset.full || '';
+  navigator.clipboard.writeText(full);
+  const btn = document.getElementById('qmCopyBtn');
+  btn.classList.add('copied');
+  btn.innerHTML = CHECK15.replace(/white/, 'currentColor') + ' Copied';
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+  }, 1800);
+}
+
+/* ── asset-modal "QR only" info banner ── */
+function showQrOnlyInfo(symbol, chain) {
+  const ch = chainOf(chain);
+  document.getElementById('qrOnlyMsg').textContent = `${symbol} on ${ch.name} isn't supported by your connected wallet.`;
+  document.getElementById('qrOnlyInfo').classList.add('show');
+}
+function hideQrOnlyInfo() {
+  document.getElementById('qrOnlyInfo').classList.remove('show');
+}
+function confirmUnsupported() {
+  if (pendingPick) pickAsset(pendingPick.symbol, pendingPick.chain, true);
+}
 
 /* ── Manual range screen ── */
 let rangeSel = null;
@@ -2033,7 +2221,7 @@ function openRange() {
   document.getElementById('rpPrice').textContent = price.toLocaleString('en-US', { maximumFractionDigits: 3 });
   document.getElementById('rpPriceUsd').textContent = `($${(t0.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
   // default deposit token = pool token 0, native on Base
-  rangeSel = { sym: t0.sym, s: t0.s, c: t0.c, price: t0.price || 1, chain: 'base', chainName: 'Base', balance: 0, viaIntents: false };
+  rangeSel = { sym: t0.sym, s: t0.s, c: t0.c, price: t0.price || 1, chain: 'base', chainName: 'Base', balance: 0, viaIntents: false, walletSupported: true };
   // default preset = Correlated (index 1)
   const presets = document.querySelectorAll('#rpPresets .rp-preset');
   presets.forEach((p, i) => p.classList.toggle('active', i === 1));
@@ -2079,17 +2267,14 @@ function updateRange() {
     `<div class="rp-min-row"><span class="tk"><span class="token-icon sm" style="background:${b.c}">${b.s}</span>${b.sym}</span><span class="amt">${fmt(amtB)}</span></div>`;
 
   const note = document.getElementById('rpIntentsNote');
-  const cta = document.getElementById('rpCta');
   if (rangeSel.viaIntents) {
     note.classList.add('show');
-    note.innerHTML = `Paying with <b>${rangeSel.sym} on ${rangeSel.chainName}</b> — routed via <span class="via"><svg width="11" height="11" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>Aurora Intents</span>, then split into <b>${a.sym} + ${b.sym}</b> on Base for your range. No bridging, no gas on Base.`;
-    cta.classList.add('intents');
-    cta.textContent = 'Deposit with Intents';
+    const qrLine = rangeSel.walletSupported ? '' : ` <b>Your wallet can't sign on ${rangeSel.chainName}</b> — you'll complete this by sending to a QR deposit address.`;
+    note.innerHTML = `Paying with <b>${rangeSel.sym} on ${rangeSel.chainName}</b> — routed via <span class="via"><svg width="11" height="11" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>Aurora Intents</span>, then split into <b>${a.sym} + ${b.sym}</b> on Base for your range.${qrLine}`;
   } else {
     note.classList.remove('show');
-    cta.classList.remove('intents');
-    cta.textContent = 'Swap & Deposit';
   }
+  resetDepo('rpCta', rangeSel);
 }
 
 function pickPreset(btn, i) {
@@ -2112,13 +2297,7 @@ function rpMaxClick() {
   updateRange();
 }
 
-function rpDeposit() {
-  if (rangeSel.viaIntents) {
-    alert(`Deposit with Aurora Intents\n\nPay ${document.getElementById('rpAmount').value || 0} ${rangeSel.sym} on ${rangeSel.chainName} → Intents settles it into both pool tokens on Base, deposited into your selected price range.`);
-  } else {
-    alert('Swap & Deposit\n\n(Native Hydrex zap — Base only.)');
-  }
-}
+function rpDeposit() { runDepoStep('rpCta', rangeSel); }
 
 function drawRangeChart() {
   const canvas = document.getElementById('rpChartCanvas');
@@ -2369,9 +2548,11 @@ function drawQrPattern(canvas, seedStr) {
 
 document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('qrOverlay').addEventListener('click', function(e) { if (e.target === this) closeQrModal(); });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (document.getElementById('assetOverlay').classList.contains('open')) closeAssetModal();
+  if (document.getElementById('qrOverlay').classList.contains('open')) closeQrModal();
+  else if (document.getElementById('assetOverlay').classList.contains('open')) closeAssetModal();
   else closeModal();
 });
 
