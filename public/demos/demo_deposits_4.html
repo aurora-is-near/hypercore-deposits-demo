@@ -1045,6 +1045,19 @@ button { font-family: inherit; }
 .qr-intro-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; }
 .qr-intro-sub b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* QR address validity countdown */
+.qm-timer {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  flex-wrap: wrap; text-align: center;
+  font-size: 12px; color: var(--text-2);
+  margin: 0 0 14px;
+}
+.qm-timer svg { flex-shrink: 0; }
+.qm-timer b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.qm-timer .dot { color: var(--text-3); }
+.qm-timer.expired { color: #B42318; }
+.qm-timer.expired b, .qm-timer.expired svg { color: #B42318; stroke: #B42318; }
+
 .qr-code-wrap {
   display: flex; align-items: center; justify-content: center;
   background: white; border-radius: 14px; padding: 16px;
@@ -1628,6 +1641,7 @@ button { font-family: inherit; }
       <div class="qr-intro">
         <div class="qr-intro-sub">Send <b id="qmAmount">0</b> from any wallet or exchange</div>
       </div>
+      <div class="qm-timer" id="qmTimer"></div>
       <div class="qr-code-wrap"><canvas id="qmCanvas" width="168" height="168"></canvas></div>
       <div class="qr-chain-tag"><span class="aw-chain-dot" id="qmChainDot"></span><span id="qmChainLabel"></span></div>
       <div class="qr-address-box">
@@ -2203,17 +2217,52 @@ function openQrModal(sel) {
   status.innerHTML = '<span class="qr-pulse-dot"></span> Waiting for deposit…';
 
   drawQrPattern(document.getElementById('qmCanvas'), full + raw);
+  startQmCountdown();
   document.getElementById('qrOverlay').classList.add('open');
 
   clearTimeout(window.__qmTimer);
   window.__qmTimer = setTimeout(() => {
     status.className = 'qr-status detected';
     status.innerHTML = CHECK15.replace(/white/, 'currentColor') + ' Deposit detected — settling on Base';
+    clearInterval(window.__qmCountdown);
+    document.getElementById('qmTimer').style.display = 'none';
   }, 4500);
+}
+
+const QM_CLOCK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+let qmRemaining = 900;
+
+function renderQmCountdown() {
+  const el = document.getElementById('qmCountdown');
+  if (!el) return;
+  const m = Math.floor(qmRemaining / 60), s = qmRemaining % 60;
+  el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function startQmCountdown() {
+  clearInterval(window.__qmCountdown);
+  qmRemaining = 15 * 60;
+  const timer = document.getElementById('qmTimer');
+  timer.style.display = '';
+  timer.classList.remove('expired');
+  timer.innerHTML = `${QM_CLOCK} Address valid for <b id="qmCountdown">15:00</b> <span class="dot">·</span> quotes are indicative only`;
+  window.__qmCountdown = setInterval(() => {
+    qmRemaining--;
+    if (qmRemaining <= 0) {
+      qmRemaining = 0;
+      renderQmCountdown();
+      clearInterval(window.__qmCountdown);
+      timer.classList.add('expired');
+      timer.innerHTML = `${QM_CLOCK} Address expired — close and reopen to get a fresh deposit address`;
+      return;
+    }
+    renderQmCountdown();
+  }, 1000);
 }
 
 function closeQrModal() {
   clearTimeout(window.__qmTimer);
+  clearInterval(window.__qmCountdown);
   document.getElementById('qrOverlay').classList.remove('open');
 }
 
