@@ -1534,16 +1534,6 @@ button { font-family: inherit; }
             <div class="step-item" id="rpStepItem2"><span class="step-num" id="rpStepNum2">2</span>Send assets</div>
           </div>
           <button class="rp-cta" id="rpCta" onclick="rpDeposit()" style="margin-top:0;">Approve deposit</button>
-
-          <div id="rpQrOption">
-            <div class="aw-or-divider">
-              <span class="aw-or-line"></span><span class="aw-or-text">or</span><span class="aw-or-line"></span>
-            </div>
-            <button class="aw-qr-btn" onclick="rpShowQr()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
-              Deposit via QR code — no wallet connect needed
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -1580,16 +1570,6 @@ button { font-family: inherit; }
         <div class="step-item" id="ssStepItem2"><span class="step-num" id="ssStepNum2">2</span>Send assets</div>
       </div>
       <button class="rp-cta" id="ssCta" onclick="ssDeposit()" style="margin-top:0;">Approve deposit</button>
-
-      <div id="ssQrOption">
-        <div class="aw-or-divider">
-          <span class="aw-or-line"></span><span class="aw-or-text">or</span><span class="aw-or-line"></span>
-        </div>
-        <button class="aw-qr-btn" onclick="ssShowQr()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
-          Deposit via QR code — no wallet connect needed
-        </button>
-      </div>
 
       <!-- Strategy Info -->
       <div class="ss-info">
@@ -2133,11 +2113,6 @@ function resetStepFlow(key, sel) {
   document.getElementById(key + 'StepNum2').textContent = '2';
   btn.disabled = false;
   btn.textContent = 'Approve deposit';
-  // Supported assets also offer the standalone QR option below; QR-only
-  // assets reach QR through the button's second step, so hide the extra option.
-  const supported = !sel || sel.walletSupported;
-  const qrOption = document.getElementById(key + 'QrOption');
-  if (qrOption) qrOption.style.display = supported ? '' : 'none';
 }
 
 function runSend(key, sel) {
