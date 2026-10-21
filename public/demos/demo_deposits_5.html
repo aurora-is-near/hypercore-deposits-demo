@@ -339,7 +339,7 @@ code.ep{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;b
 <div class="wrap intro">
   <div class="eyebrow">Minimum UX impact</div>
   <h1 id="h1">Haedal's Swap — now reachable from 34 chains</h1>
-  <p class="lede" id="lede">Same card, same engine, same flow. The only change is <b>what the token picker can list</b>. Flip <b>Highlight what changed</b> to see every modified pixel.</p>
+  <p class="lede" id="lede">Same card, same engine, same flow. The only change is <b>what the token picker can list</b>. Every modified element is outlined — switch off <b>Highlight what changed</b> to see the clean UI.</p>
 </div>
 
 <div class="wrap stage">
@@ -661,7 +661,7 @@ const fmt=(v,d)=>v.toLocaleString('en-US',{maximumFractionDigits:d===undefined?(
 const usd=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
 /* ── state ── */
-let screen='swap', showChg=false, filter='sui', target='pay';
+let screen='swap', showChg=true, filter='sui', target='pay';   // highlight is on when the demo opens
 let paySel=SUI_ASSETS[0], getSel=SUI_ASSETS[1];
 let lendSel=SUI_ASSETS[1], liqSel=SUI_ASSETS[0];
 let lendAS=true, liqAS=true;
@@ -671,7 +671,7 @@ let qrInt=null,qrLeft=900,qrTo=null,qrCtx='swap';
 /* ── screens ── */
 const COPY={
   swap:{h:"Haedal's Swap — now reachable from 34 chains",
-    l:"Same card, same engine, same flow. The only change is <b>what the token picker can list</b>. Flip <b>Highlight what changed</b> to see every modified pixel.",
+    l:"Same card, same engine, same flow. The only change is <b>what the token picker can list</b>. Every modified element is outlined — switch off <b>Highlight what changed</b> to see the clean UI.",
     main:"The token picker gains a <b>chain rail</b> with <b>Sui selected by default</b> — so the list a user sees on open is exactly today's list. Other chains are one click away rather than behind a mode switch. Pick USDC on Base or SOL on Solana and the quote comes from the <b>Swap API</b> instead of Cetus; the swap settles on Sui. Sui↔Sui pairs still route through Cetus, untouched.<br><br>A swap stays <b>one transaction</b>: the quote returns a deposit address and the user simply sends the origin asset to it — no approval, no contract call. The vault screens use the same API to <b>bridge</b>, and then run Haedal's ordinary Sui deposit on top.",
     pills:['Sui is the default view','Cetus stays the Sui engine','1 transaction, no approval'],
     prod:'Swap API — quote + deposit address',
@@ -732,8 +732,10 @@ function paintRail(){
     `<a href="${u}" target="_blank" rel="noopener">${t}
       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></a>`).join('');
 }
-function toggleChg(){ showChg=!showChg; document.body.classList.toggle('show-chg',showChg);
+function paintChg(){ document.body.classList.toggle('show-chg',showChg);
   document.getElementById('chgT').classList.toggle('on',showChg); }
+function toggleChg(){ showChg=!showChg; paintChg(); }
+paintChg();
 
 /* ── picker ── */
 function openPicker(t){ target=t; filter='sui';
