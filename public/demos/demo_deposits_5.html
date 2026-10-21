@@ -1,0 +1,1010 @@
+<meta charset="utf-8">
+<title>Aurora Intents — Integration Prototype</title>
+<style>
+:root{
+  --orange:#F27A00; --orange-dk:#D96E00; --orange-10:rgba(242,122,0,.10); --orange-20:rgba(242,122,0,.22);
+  --ink:#2B2520; --ink-2:#5A5047; --muted:#8A8178; --faint:#AFA69C;
+  --line:#EFE9E2; --line-2:#F6F2ED;
+  --panel:#F5F5F5; --card:#FFFFFF;
+  --page-top:#FFF5EB; --page-bot:#F5F5F5;
+  --aurora:#00C896; --aurora-dk:#00926E; --aurora-tint:#EAFBF4; --aurora-line:#A5E8D1;
+  --sh-sm:0 1px 2px rgba(43,37,32,.05);
+  --sh:0 6px 22px rgba(43,37,32,.07);
+  --sh-lg:0 24px 60px rgba(43,37,32,.16);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Outfit,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:linear-gradient(var(--page-top) 0%,var(--page-bot) 420px);
+  background-attachment:fixed;
+  color:var(--ink); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+/* top bar */
+.bar{background:rgba(255,255,255,.72);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:18px;padding:13px 22px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:700;letter-spacing:-.01em}
+.otter{width:30px;height:30px;border-radius:50%;background:#C9A227;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.sep{width:1px;height:20px;background:var(--line)}
+.sub{font-size:12.5px;color:var(--muted)}
+.spacer{flex:1}
+.toggle-chg{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;user-select:none}
+.sw{width:38px;height:22px;border-radius:999px;background:var(--line);position:relative;transition:.2s;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:var(--sh-sm)}
+.toggle-chg.on .sw{background:var(--aurora)}
+.toggle-chg.on .sw::after{transform:translateX(16px)}
+
+/* tabs */
+.tabs{display:flex;gap:2px;background:rgba(255,255,255,.7);border:1px solid var(--line);padding:4px;border-radius:999px;flex-wrap:wrap}
+.tab{border:none;background:none;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:.15s}
+.tab:hover{color:var(--ink)}
+.tab.active{background:var(--orange);color:#fff}
+
+/* intro */
+.intro{padding:28px 0 6px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--orange)}
+h1{font-size:28px;line-height:1.18;letter-spacing:-.025em;font-weight:700;margin:7px 0 8px;text-wrap:balance}
+.lede{font-size:15px;color:var(--ink-2);max-width:72ch}
+.lede b{color:var(--ink);font-weight:600}
+
+/* stage */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:26px;align-items:start;padding:26px 0 70px}
+@media(max-width:980px){.stage{grid-template-columns:1fr}}
+
+/* haedal page frame */
+.frame{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--sh)}
+.frame-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:#FAF7F3;border-bottom:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.frame-url{flex:1;text-align:center;font-size:11px;color:var(--faint);background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hae-nav{display:flex;align-items:center;gap:17px;padding:12px 18px;font-size:13px;font-weight:500;color:var(--ink-2);background:linear-gradient(var(--page-top),#fff 90%);border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+.hae-nav .n{cursor:default}
+.hae-nav .n.on{color:var(--orange);font-weight:600}
+.hae-nav .badge{font-size:8.5px;font-weight:700;background:var(--orange);color:#fff;padding:1px 5px;border-radius:999px;margin-left:3px;vertical-align:middle}
+.hae-connect{margin-left:auto;background:var(--orange);color:#fff;border:none;border-radius:999px;padding:7px 17px;font-size:13px;font-weight:600;cursor:pointer}
+.hae-body{padding:26px 20px 30px;background:linear-gradient(#FFFDFB,#FAFAFA)}
+
+/* generic haedal card */
+.hcard{background:#fff;border-radius:18px;padding:18px;box-shadow:0 2px 14px rgba(43,37,32,.05);max-width:410px;margin:0 auto}
+.hcard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.hcard-t{font-size:16.5px;font-weight:700}
+.slip{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:5px}
+
+/* pay/receive panel */
+.pane{background:var(--panel);border-radius:14px;padding:14px 15px;position:relative}
+.pane + .pane{margin-top:0}
+.pane-l{font-size:12px;color:var(--muted);margin-bottom:5px}
+.pane-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pane-in{font-size:30px;font-weight:600;letter-spacing:-.02em;border:none;background:none;outline:none;width:100%;color:var(--ink);font-variant-numeric:tabular-nums;font-family:inherit}
+.pane-in::placeholder{color:#C9C2BA}
+.pane-in:disabled{color:var(--ink)}
+.pane-sub{font-size:12px;color:var(--faint);margin-top:5px;display:flex;align-items:center;gap:5px}
+.tpill{display:flex;align-items:center;gap:6px;background:var(--orange-10);border:none;border-radius:999px;padding:6px 11px 6px 7px;cursor:pointer;font-size:14px;font-weight:600;color:var(--ink);flex-shrink:0;transition:.15s}
+.tpill:hover{background:var(--orange-20)}
+.tico{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9.5px;font-weight:700;flex-shrink:0;position:relative}
+.tico.sm{width:19px;height:19px;font-size:8px}
+.chbadge{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:1.5px solid #fff}
+.swapmid{display:flex;justify-content:center;margin:-11px 0;position:relative;z-index:2}
+.swapmid div{width:30px;height:30px;border-radius:50%;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);box-shadow:var(--sh-sm)}
+.hcta{width:100%;background:var(--orange);color:#fff;border:none;border-radius:999px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.hcta:hover{background:var(--orange-dk)}
+.hcta:disabled{background:#E8E2DB;color:var(--faint);cursor:not-allowed}
+.hcta.done,.hcta.done:hover{background:var(--aurora);cursor:default}
+.hcta.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.hcta.ghost:hover{background:var(--line-2)}
+.powered{text-align:center;font-size:11.5px;color:var(--faint);margin-top:11px;display:flex;align-items:center;justify-content:center;gap:5px}
+.powered b{color:var(--aurora-dk);font-weight:700}
+
+/* change highlight — the badge sits fully OUTSIDE its element, never over its content.
+   Highlight mode reserves the strip it needs, so it never lands on a neighbour either. */
+.chg{position:relative}
+body.show-chg .chg{outline:2px dashed var(--aurora);outline-offset:3px;border-radius:12px}
+body.show-chg .chg::after{
+  content:attr(data-chg);position:absolute;bottom:100%;left:8px;margin-bottom:7px;z-index:40;
+  background:var(--aurora);color:#fff;font-size:9px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap;pointer-events:none;
+  box-shadow:0 1px 4px rgba(43,37,32,.18)}
+/* an annotated element must never sit inside its own scroll container */
+body.show-chg .chg{overflow:visible!important}
+/* block-level annotations push themselves down to make room */
+body.show-chg .route.chg,body.show-chg .onetx.chg,body.show-chg .steps.chg,
+body.show-chg .autoswap.chg{margin-top:28px}
+/* an inline pill can't shift on its own — its row makes the room instead */
+body.show-chg .pane-row:has(.chg){margin-top:22px}
+/* the chain rail is flush against the modal body, so its badge hangs below the search field */
+body.show-chg .mdl-body{padding-top:22px}
+.only-chg{display:none}
+body.show-chg .only-chg{display:block}
+
+/* vault layout */
+.vault-top{background:#fff;border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:14px;box-shadow:0 2px 14px rgba(43,37,32,.05);flex-wrap:wrap}
+.vault-top .nm{font-size:16px;font-weight:700}
+.vault-top .cur{font-size:11.5px;color:var(--orange);display:flex;align-items:center;gap:4px}
+.vstat{text-align:right;margin-left:auto;display:flex;gap:26px;flex-wrap:wrap}
+.vstat div span{display:block;font-size:11px;color:var(--muted)}
+.vstat div b{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.vstat .apy b{color:var(--orange)}
+.vault-cols{display:grid;grid-template-columns:1fr 352px;gap:14px}
+@media(max-width:880px){.vault-cols{grid-template-columns:1fr}}
+.vinfo{background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 2px 14px rgba(43,37,32,.05);margin-bottom:12px}
+.vinfo h4{font-size:14.5px;font-weight:700;margin-bottom:11px}
+.vrow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:12.5px;border-bottom:1px dashed var(--line-2)}
+.vrow:last-child{border-bottom:none}
+.vrow .k{color:var(--muted)}
+.vrow .v{font-weight:600}
+.vinfo p{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-bottom:6px}
+.dep-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 14px rgba(43,37,32,.05)}
+.dep-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:12px}
+.dep-head .hold{color:var(--muted)}
+.dw{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.dwtabs{display:flex;background:var(--line-2);border-radius:999px;padding:3px}
+.dwtabs button{border:none;background:none;padding:6px 15px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.dwtabs button.on{background:#fff;color:var(--ink);box-shadow:var(--sh-sm)}
+.autoswap{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--orange);cursor:pointer;user-select:none}
+.autoswap .sw{width:34px;height:20px}
+.autoswap .sw::after{width:14px;height:14px}
+.autoswap.on .sw{background:var(--orange)}
+.autoswap.on .sw::after{transform:translateX(14px)}
+.autoswap:not(.on){color:var(--muted)}
+.notebox{background:#FFF4E8;border-radius:11px;padding:10px 12px;font-size:11.5px;color:#8A5A1C;line-height:1.45;display:flex;align-items:center;gap:10px;margin-top:11px}
+.notebox .sw{width:34px;height:20px;background:var(--orange);flex-shrink:0}
+.notebox .sw::after{width:14px;height:14px;transform:translateX(14px)}
+
+/* route note */
+.route{background:var(--aurora-tint);border:1px solid var(--aurora-line);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--aurora-dk);line-height:1.45;margin-top:11px;display:flex;gap:8px}
+.route svg{flex-shrink:0;margin-top:1px}
+.route b{color:var(--ink);font-weight:700}
+.rsum{margin-top:11px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rsum .r{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--line-2)}
+.rsum .r:last-child{border-bottom:none}
+.rsum .k{color:var(--muted)}
+.rsum .v{font-weight:600;font-variant-numeric:tabular-nums}
+.rsum .v.good{color:var(--aurora-dk)}
+.onetx{background:var(--aurora-tint);border:1px solid var(--aurora-line);border-radius:12px;padding:9px 12px;font-size:12px;color:var(--aurora-dk);line-height:1.45;margin-top:11px;display:flex;gap:8px;align-items:flex-start}
+.onetx svg{flex-shrink:0;margin-top:1px}
+.onetx b{color:var(--ink);font-weight:700}
+.steps{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:12px;font-size:11.5px;font-weight:600}
+.stp{display:flex;align-items:center;gap:6px;color:var(--faint)}
+.stp.on{color:var(--ink)}
+.stp.ok{color:var(--aurora-dk)}
+.stp i{width:17px;height:17px;border-radius:50%;background:var(--line-2);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-style:normal;font-weight:700}
+.stp.on i{background:var(--orange);color:#fff}
+.stp.ok i{background:var(--aurora);color:#fff}
+.stpline{width:22px;height:1.5px;background:var(--line);border-radius:2px}
+.stpline.ok{background:var(--aurora)}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:2s}}
+
+/* commentary rail */
+.rail{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px}
+.rcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:17px}
+.rcard h3{font-size:14.5px;font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.rcard p{font-size:13px;color:var(--ink-2)}
+.rcard p + p{margin-top:7px}
+/* the integration card is our side of the proposal — tinted Aurora, not Haedal white */
+.rcard.tech{background:var(--aurora-tint);border-color:var(--aurora-line)}
+.rcard.tech h3{color:#006B51}
+.rcard.tech .ol li{color:#2F5247}
+.rcard.tech code.ep{background:#fff;border-color:var(--aurora-line);color:#006B51}
+.rcard.tech .dl{border-top-color:var(--aurora-line)}
+.rcard.tech .dl a{background:#fff;border:1px solid var(--aurora-line);color:#006B51}
+.rcard.tech .ilabel{color:#3A6E5D}
+.pill-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.mini{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--line-2);color:var(--ink-2)}
+.mini.g{background:var(--aurora-tint);color:var(--aurora-dk)}
+.ul{list-style:none;margin-top:8px}
+.ul li{display:flex;gap:8px;font-size:12.5px;color:var(--ink-2);padding:4px 0}
+.ul li svg{flex-shrink:0;margin-top:3px}
+.ul li.same svg{color:var(--faint)}
+.ul li.new svg{color:var(--aurora-dk)}
+
+/* modals */
+.ovl{position:fixed;inset:0;background:rgba(43,37,32,.3);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:300;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;pointer-events:none;transition:.18s}
+.ovl.open{opacity:1;pointer-events:all}
+.mdl{background:#fff;border-radius:20px;width:100%;max-width:458px;box-shadow:var(--sh-lg);max-height:84vh;display:flex;flex-direction:column;overflow:hidden;transform:translateY(10px) scale(.98);transition:transform .2s cubic-bezier(.32,.72,0,1)}
+.ovl.open .mdl{transform:none}
+.mdl-h{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 13px}
+.mdl-t{font-size:16.5px;font-weight:700}
+.xbtn{width:28px;height:28px;border-radius:50%;border:none;background:var(--line-2);color:var(--ink-2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.xbtn:hover{background:var(--line)}
+.srch{margin:0 20px 12px;display:flex;align-items:center;gap:9px;background:var(--panel);border-radius:999px;padding:10px 15px}
+.srch input{border:none;outline:none;background:none;font-size:13.5px;width:100%;font-family:inherit;color:var(--ink)}
+.srch svg{color:var(--faint);flex-shrink:0}
+/* source tabs (Sui / Other chains) */
+.srctabs{display:flex;gap:6px;margin:0 20px 10px;align-items:center}
+.srctab{border:none;background:var(--line-2);color:var(--ink-2);padding:6px 13px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.srctab.on{background:var(--ink);color:#fff}
+.srctab.ic.on{background:var(--aurora);color:#fff}
+.mdl-body{display:flex;min-height:0;flex:1;border-top:1px solid var(--line)}
+.chrail-wrap{width:150px;flex-shrink:0;display:flex;min-height:0;position:relative}
+.chrail{width:100%;overflow-y:auto;padding:8px;border-right:1px solid var(--line);background:#FBF9F7}
+.chrow{display:flex;align-items:center;gap:8px;width:100%;padding:7px 9px;border-radius:9px;border:none;background:none;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;text-align:left}
+.chrow:hover{background:rgba(43,37,32,.04)}
+.chrow.on{background:#fff;color:var(--ink);box-shadow:var(--sh-sm)}
+.chrow.home{margin-bottom:6px;padding-bottom:9px;border-bottom:1px solid var(--line);border-radius:9px 9px 0 0}
+.chrow.home.on{border-bottom-color:transparent}
+.cdot{width:17px;height:17px;border-radius:50%;flex-shrink:0}
+.ccount{margin-left:auto;font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+.alist{flex:1;overflow-y:auto;padding:8px;max-height:330px}
+.arow{display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px;border:none;background:none;border-radius:11px;cursor:pointer;text-align:left}
+.arow:hover{background:var(--line-2)}
+.arow.on{background:#FFF4E8}
+.ainf{flex:1;min-width:0}
+.asym{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+.anm{font-size:11px;color:var(--muted)}
+.abal{text-align:right;font-variant-numeric:tabular-nums}
+.abal b{font-size:13px;font-weight:600;display:block}
+.abal span{font-size:10.5px;color:var(--faint)}
+.xchain{font-size:8.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--aurora);color:#fff;padding:1px 6px;border-radius:999px}
+
+/* QR */
+.qrb{padding:0 22px 22px;text-align:center}
+.qrs{font-size:13px;color:var(--muted);margin-bottom:11px}
+.qrs b{color:var(--ink);font-weight:700}
+.qrt{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.qrt b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.qrt.exp,.qrt.exp b{color:#C0392B}
+.qrbox{width:178px;margin:0 auto 12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}
+.qrbox canvas{display:block;width:100%;height:auto}
+.qrch{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:11px}
+.qradr{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border-radius:11px;padding:10px 12px;margin-bottom:11px}
+.qradr code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp{flex-shrink:0;border:none;background:none;color:var(--orange);font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:7px}
+.cp:hover{background:var(--orange-10)}
+.cp.ok{color:var(--aurora-dk)}
+.warn{background:#FFF4E8;border:1px solid #F7DCBB;border-radius:11px;padding:10px 12px;font-size:11.5px;color:#8A5A1C;text-align:left;display:flex;gap:8px;margin-bottom:11px;line-height:1.45}
+.warn svg{flex-shrink:0;margin-top:1px}
+.qrst{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px;border-radius:11px;background:var(--line-2);font-size:13px;font-weight:600;color:var(--ink-2)}
+.qrst.det{background:var(--aurora-tint);color:var(--aurora-dk)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--orange);animation:pl 1.4s ease-in-out infinite}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.pulse{animation:none}}
+/* gate — keeps the demo from looking public. Not security: the page ships to the browser. */
+#gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(var(--page-top) 0%,var(--page-bot) 420px)}
+#gate.off{display:none}
+body.locked>*:not(#gate){display:none!important}
+.gbox{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh-lg);
+  padding:28px;width:100%;max-width:340px;text-align:center}
+.glogo{display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;font-weight:700;margin-bottom:4px}
+.gsub{font-size:12.5px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.gin{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;background:var(--line-2);
+  padding:12px 14px;font-family:inherit;font-size:14px;color:var(--ink);text-align:center;letter-spacing:.08em;outline:none}
+.gin:focus{border-color:var(--orange);background:#fff}
+.gin.bad{border-color:#E05252;background:#FEF3F3}
+.gbtn{width:100%;margin-top:10px;border:none;border-radius:12px;background:var(--orange);color:#fff;
+  font-family:inherit;font-size:14px;font-weight:700;padding:12px;cursor:pointer}
+.gbtn:hover{background:var(--orange-dk)}
+.gerr{font-size:12px;color:#C33;margin-top:9px;min-height:15px}
+/* how to integrate */
+.ol{list-style:none;margin:0;padding:0;counter-reset:st}
+.ol li{counter-increment:st;position:relative;padding-left:24px;font-size:12.5px;line-height:1.55;color:var(--ink-2);margin-bottom:9px}
+.ol li::before{content:counter(st);position:absolute;left:0;top:1px;width:16px;height:16px;border-radius:50%;
+  background:var(--aurora-tint);color:var(--aurora-dk);font-size:9.5px;font-weight:800;
+  display:flex;align-items:center;justify-content:center}
+code.ep{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:var(--line-2);
+  border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--ink);white-space:nowrap}
+.dl{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+.dl a{font-size:11px;font-weight:700;color:var(--aurora-dk);background:var(--aurora-tint);
+  border-radius:999px;padding:4px 9px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.dl a:hover{text-decoration:underline}
+.ilabel{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+/* success */
+.succ{text-align:center;padding:12px 0}
+.sring{width:54px;height:54px;border-radius:50%;background:var(--aurora-tint);border:2px solid var(--aurora);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--aurora-dk)}
+.samt{font-size:25px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ssub{font-size:13px;color:var(--muted);margin-top:2px}
+</style>
+
+<div id="gate">
+  <div class="gbox">
+    <div class="glogo">
+      <svg width="20" height="20" viewBox="0 0 288 288" aria-hidden="true"><rect width="288" height="288" rx="64" fill="#00C896"/><path fill="#fff" d="M144,58.8c7.6,0,14.5,4.3,17.9,11.1l56.2,112.5c4.9,9.9,0.9,21.9-9,26.8c-2.8,1.4-5.8,2.1-8.9,2.1H87.8c-11,0-20-9-20-20c0-3.1,0.7-6.2,2.1-8.9l56.2-112.5C129.5,63,136.4,58.7,144,58.8 M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>
+      Aurora Intents
+    </div>
+    <p class="gsub">Private integration prototype.<br>Enter the password to continue.</p>
+    <input class="gin" id="gpw" type="password" placeholder="Password" autocomplete="off"
+      onkeydown="if(event.key==='Enter')unlock()" oninput="this.classList.remove('bad');document.getElementById('gerr').textContent=''">
+    <button class="gbtn" onclick="unlock()">Enter</button>
+    <div class="gerr" id="gerr"></div>
+  </div>
+</div>
+<script>
+/* decided at parse time so the page never flashes behind the gate */
+(function(){
+  let ok=false; try{ ok=sessionStorage.getItem('demo-unlock')==='1'; }catch(e){}
+  if(ok) document.getElementById('gate').classList.add('off');
+  else { document.body.classList.add('locked');
+         addEventListener('DOMContentLoaded',()=>document.getElementById('gpw').focus()); }
+})();
+</script>
+
+<div class="bar"><div class="wrap">
+  <div class="logo">
+    <span class="otter"><svg width="19" height="19" viewBox="0 0 24 24" fill="#5C4A1E"><ellipse cx="12" cy="14" rx="7" ry="6"/><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="7" r="2.6"/><circle cx="9.6" cy="13" r="1.1" fill="#fff"/><circle cx="14.4" cy="13" r="1.1" fill="#fff"/></svg></span>
+    Haedal
+  </div>
+  <span class="sep"></span>
+  <span class="sub">× Aurora Intents — integration prototype</span>
+  <span class="spacer"></span>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-s="swap">Swap</button>
+    <button class="tab" data-s="lend">Lending Vault</button>
+    <button class="tab" data-s="liq">Liquidity Vault</button>
+  </div>
+  <div class="toggle-chg" id="chgT" onclick="toggleChg()"><span class="sw"></span>Highlight what changed</div>
+</div></div>
+
+<div class="wrap intro">
+  <div class="eyebrow">Minimum UX impact</div>
+  <h1 id="h1">Haedal's Swap — now reachable from 34 chains</h1>
+  <p class="lede" id="lede">Same card, same engine, same flow. The only change is <b>what the token picker can list</b>. Flip <b>Highlight what changed</b> to see every modified pixel.</p>
+</div>
+
+<div class="wrap stage">
+  <div>
+    <!-- ══ SWAP ══ -->
+    <div class="frame scr" id="scr-swap">
+      <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="frame-url">haedal.xyz/swap/…::sui::SUI/…::usdc::USDC</span></div>
+      <div class="hae-nav"><span class="n">Stake ⌄</span><span class="n on">Swap</span><span class="n">Liquidity</span>
+        <span class="n">Lending Vault<span class="badge">New</span></span><span class="n">veHAEDAL</span>
+        <button class="hae-connect">Connect</button></div>
+      <div class="hae-body">
+        <div class="hcard">
+          <div class="hcard-head"><span class="hcard-t">Swap</span>
+            <span class="slip">0.5% <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span></div>
+
+          <div class="pane">
+            <div class="pane-l">Pay</div>
+            <div class="pane-row">
+              <input class="pane-in" id="payIn" value="1000" oninput="onPay()">
+              <button class="tpill chg" data-chg="Same control" onclick="openPicker('pay')">
+                <span class="tico" id="payIco" style="background:#4DA2FF">◎</span>
+                <span id="paySym">SUI</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+            </div>
+            <div class="pane-sub"><span id="payUsd">$0</span> <span id="payOn"></span></div>
+          </div>
+          <div class="swapmid"><div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div></div>
+          <div class="pane">
+            <div class="pane-l">Receive</div>
+            <div class="pane-row">
+              <input class="pane-in" id="getIn" value="0" disabled>
+              <button class="tpill" onclick="openPicker('get')">
+                <span class="tico" id="getIco" style="background:#2775CA">$</span>
+                <span id="getSym">USDC</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+            </div>
+            <div class="pane-sub" id="getUsd">$0</div>
+          </div>
+
+          <div class="route chg" id="swRoute" data-chg="New — route summary (optional)" style="display:none"></div>
+
+          <div class="onetx chg" id="swOne" data-chg="Still 1 transaction" style="display:none">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>One transaction — no approval. You send <b id="oneAsset">USDC</b>, Haedal receives on Sui.</span>
+          </div>
+
+          <button class="hcta" id="swCta" onclick="swAct()">Connect Wallet</button>
+          <div id="swAlt" style="display:none">
+            <button class="hcta ghost" style="margin-top:9px" onclick="openQr('swap')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+              Deposit by QR instead</button></div>
+
+          <div class="powered" id="swPow">Powered by Cetus</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LENDING VAULT ══ -->
+    <div class="frame scr" id="scr-lend" style="display:none">
+      <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="frame-url">haedal.xyz/lending → USDC vault</span></div>
+      <div class="hae-nav"><span class="n">Stake ⌄</span><span class="n">Swap</span><span class="n">Liquidity</span>
+        <span class="n on">Lending Vault<span class="badge">New</span></span><span class="n">veHAEDAL</span>
+        <button class="hae-connect">Connect</button></div>
+      <div class="hae-body">
+        <div class="vault-top">
+          <span class="tico" style="width:30px;height:30px;font-size:11px;background:#2775CA">$</span>
+          <div><div class="nm">USDC</div><div class="cur">◉ Curator Haedal</div></div>
+          <div class="vstat">
+            <div><span>TVL</span><b>$3,595,049</b></div>
+            <div class="apy"><span>APY</span><b>11.23%</b></div>
+          </div>
+        </div>
+        <div class="vault-cols">
+          <div>
+            <div class="vinfo"><h4>Vault Info</h4>
+              <div class="vrow"><span class="k">Vault Address</span><span class="v">0x3770…29fe</span></div>
+              <div class="vrow"><span class="k">Underlying Token</span><span class="v">USDC</span></div>
+              <div class="vrow"><span class="k">Receipt Token</span><span class="v">USDC Vault LPT</span></div>
+              <div class="vrow"><span class="k">Management Fee</span><span class="v">0%</span></div>
+              <div class="vrow"><span class="k">Performance Fee</span><span class="v">10%</span></div></div>
+            <div class="vinfo"><h4>Strategy Explanation</h4>
+              <p>Deposit tokens into an aggregated yield strategy.</p>
+              <p>Dynamically allocated across Lending protocols to earn base interest.</p>
+              <p>Yield is auto-harvested and compounded across strategies.</p></div>
+          </div>
+          <div>
+            <div class="dep-card">
+              <div class="dep-head"><span>Your Holdings</span><span class="hold">0 Vault LPT (0)</span></div>
+              <div class="dw">
+                <div class="dwtabs"><button class="on">Deposit</button><button>Withdraw</button></div>
+                <div class="autoswap on chg" data-chg="Existing toggle" id="lendAS" onclick="toggleAS('lend')"><span>Auto Swap</span><span class="sw"></span></div>
+              </div>
+              <div class="pane">
+                <div class="pane-l">Amount</div>
+                <div class="pane-row">
+                  <input class="pane-in" id="lendIn" value="1000" oninput="onLend()">
+                  <button class="tpill chg" data-chg="Same dropdown" id="lendPill" onclick="openPicker('lend')">
+                    <span class="tico" id="lendIco" style="background:#2775CA">$</span>
+                    <span id="lendSym">USDC</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+                </div>
+                <div class="pane-sub" id="lendUsd">$0</div>
+              </div>
+              <div class="route chg" id="lendRoute" data-chg="New — route summary (optional)" style="display:none"></div>
+              <div class="notebox"><span>Automatically stake LP tokens into incentive pools to boost your yield.</span><span class="sw"></span></div>
+              <div class="steps chg" id="lendSteps" data-chg="New — 2 steps" style="display:none">
+                <span class="stp on" id="ld1"><i>1</i>Bridge to Sui</span><span class="stpline" id="ldL"></span>
+                <span class="stp" id="ld2"><i>2</i>Deposit</span></div>
+              <button class="hcta" id="lendCta" onclick="lendAct()">Connect</button>
+              <div id="lendAlt" style="display:none">
+                <button class="hcta ghost" style="margin-top:9px" onclick="openQr('lend')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+                  Deposit by QR instead</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LIQUIDITY VAULT ══ -->
+    <div class="frame scr" id="scr-liq" style="display:none">
+      <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="frame-url">haedal.xyz/vault/0x5390…6bc0 — SUI-USDC</span></div>
+      <div class="hae-nav"><span class="n">Stake ⌄</span><span class="n">Swap</span><span class="n on">Liquidity</span>
+        <span class="n">Lending Vault<span class="badge">New</span></span><span class="n">veHAEDAL</span>
+        <button class="hae-connect">Connect</button></div>
+      <div class="hae-body">
+        <div class="vault-top">
+          <span class="tico" style="width:30px;height:30px;font-size:10px;background:#4DA2FF">◎</span>
+          <div><div class="nm">SUI – USDC</div><div class="cur">◉ Cetus</div></div>
+          <div class="vstat">
+            <div><span>TVL</span><b>$517,569</b></div>
+            <div><span>Capacity</span><b>$4,999,366</b></div>
+            <div class="apy"><span>APY</span><b>63.58%</b></div>
+          </div>
+        </div>
+        <div class="vault-cols">
+          <div>
+            <div class="vinfo"><h4>LP Breakdown</h4>
+              <div class="vrow"><span class="k">SUI · 45.9%</span><span class="v">$237,279.98</span></div>
+              <div class="vrow"><span class="k">USDC · 54.1%</span><span class="v">$279,322.40</span></div>
+              <div class="vrow"><span class="k">LP total</span><span class="v">$516,602.38</span></div></div>
+            <div class="vinfo"><h4>Strategy Explanation</h4>
+              <p>Deposit tokens into the Cetus concentrated liquidity pools to earn trading fees and rewards.</p>
+              <p>Liquidity ranges are automatically rebalanced when triggers are hit.</p></div>
+          </div>
+          <div>
+            <div class="dep-card">
+              <div class="dep-head"><span>Your Balance</span><span class="hold">0 LP ($0)</span></div>
+              <div class="dw">
+                <div class="dwtabs"><button class="on">Deposit</button><button>Withdraw</button></div>
+                <div class="autoswap on chg" data-chg="Existing toggle" id="liqAS" onclick="toggleAS('liq')"><span>Zap</span><span class="sw"></span></div>
+              </div>
+              <div class="pane">
+                <div class="pane-l">Amount</div>
+                <div class="pane-row">
+                  <input class="pane-in" id="liqIn" value="1000" oninput="onLiq()">
+                  <button class="tpill chg" data-chg="Same dropdown" id="liqPill" onclick="openPicker('liq')">
+                    <span class="tico" id="liqIco" style="background:#4DA2FF">◎</span>
+                    <span id="liqSym">SUI</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+                </div>
+                <div class="pane-sub" id="liqUsd">$0</div>
+              </div>
+              <div class="rsum" id="liqSplit"></div>
+              <div class="route chg" id="liqRoute" data-chg="New — route summary (optional)" style="display:none"></div>
+              <div class="notebox"><span>Automatically stake LP tokens into incentive pools to boost your yield.</span><span class="sw"></span></div>
+              <div class="steps chg" id="liqSteps" data-chg="New — 2 steps" style="display:none">
+                <span class="stp on" id="lq1"><i>1</i>Bridge to Sui</span><span class="stpline" id="lqL"></span>
+                <span class="stp" id="lq2"><i>2</i>Deposit</span></div>
+              <button class="hcta" id="liqCta" onclick="liqAct()">Connect</button>
+              <div id="liqAlt" style="display:none">
+                <button class="hcta ghost" style="margin-top:9px" onclick="openQr('liq')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM18 18h2v2h-2z"/></svg>
+                  Deposit by QR instead</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- rail -->
+  <div class="rail">
+    <div class="rcard">
+      <h3>What changed here</h3>
+      <p id="railMain"></p>
+      <div class="pill-row" id="railPills"></div>
+    </div>
+    <div class="rcard">
+      <h3>Stays exactly the same</h3>
+      <ul class="ul" id="railSame"></ul>
+    </div>
+    <div class="rcard tech">
+      <h3>
+        <svg width="14" height="14" viewBox="0 0 288 288" aria-hidden="true"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>
+        How to integrate</h3>
+      <p class="ilabel" id="integProd"></p>
+      <ol class="ol" id="integSteps"></ol>
+      <div class="dl" id="integDocs"></div>
+    </div>
+    <div class="rcard">
+      <h3>Two ways in</h3>
+      <ul class="ul">
+        <li class="new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Connected wallet</b> — EVM, Solana, NEAR… no bridging, no SUI for gas.</div></li>
+        <li class="new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>QR deposit address</b> — for wallets that can't connect, or funds on an exchange. Plain transfer, auto-detected.</div></li>
+        <li class="new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><div>On the vaults both are the <b>same step 1</b> — the bridge. Step 2 is then a plain Sui deposit.</div></li>
+      </ul>
+      <div class="pill-row"><span class="mini g">34 chains</span><span class="mini g">Sui as source + destination</span><span class="mini g">Non-custodial</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- picker -->
+<div class="ovl" id="pickOvl"><div class="mdl">
+  <div class="mdl-h"><span class="mdl-t">Select Token</span>
+    <button class="xbtn" onclick="closePicker()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="srch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="q" placeholder="Search by Token or Address" oninput="renderAssets()"></div>
+  <div class="mdl-body">
+    <div class="chrail-wrap chg" data-chg="New — chain rail"><div class="chrail" id="chrail"></div></div>
+    <div class="alist" id="alist"></div>
+  </div>
+</div></div>
+
+<!-- QR -->
+<div class="ovl" id="qrOvl"><div class="mdl" style="max-width:390px">
+  <div class="mdl-h"><span class="mdl-t">Deposit by transfer</span>
+    <button class="xbtn" onclick="closeQr()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="qrb">
+    <div class="qrs">Send <b id="qrAmt"></b> from any wallet or exchange</div>
+    <div class="qrt" id="qrTimer"></div>
+    <div class="qrbox"><canvas id="qrC" width="160" height="160"></canvas></div>
+    <div class="qrch"><span class="cdot" id="qrDot" style="width:11px;height:11px"></span><span id="qrChain"></span></div>
+    <div class="qradr"><code id="qrAddr"></code><button class="cp" id="qrCp" onclick="copyAddr()"></button></div>
+    <div class="warn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      <span>Send only <b id="qrWT"></b> on <b id="qrWC"></b>. Single-use address.</span></div>
+    <div class="qrst" id="qrSt"><span class="pulse"></span> Waiting for transfer…</div>
+  </div>
+</div></div>
+
+<!-- success -->
+<div class="ovl" id="okOvl"><div class="mdl" style="max-width:360px">
+  <div class="mdl-h"><span class="mdl-t">Done</span>
+    <button class="xbtn" onclick="closeOk()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="qrb"><div class="succ">
+    <div class="sring"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+    <div class="samt" id="okAmt"></div><div class="ssub" id="okSub"></div>
+    <div class="route" style="margin-top:14px;text-align:left"><svg width="13" height="13" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>
+      <span>Settled on Sui. Haedal's contracts received the asset exactly as they would from a native Sui user.</span></div>
+    <button class="hcta" onclick="closeOk()">Close</button>
+  </div></div>
+</div></div>
+
+<script>
+/* ── gate ──
+   A courtesy lock so the prototype doesn't read as public. The page is still
+   fully client-side, so this is presentation, not access control. */
+function unlock(){
+  const i=document.getElementById('gpw');
+  if(i.value.trim().toLowerCase()==='haedal'){
+    try{ sessionStorage.setItem('demo-unlock','1'); }catch(e){}
+    document.body.classList.remove('locked');
+    document.getElementById('gate').classList.add('off');
+  }else{
+    i.classList.add('bad'); i.select();
+    document.getElementById('gerr').textContent='Incorrect password.';
+  }
+}
+
+/* ── data ── */
+const SUI_ASSETS=[
+  {s:'SUI',  n:'Sui Token',             ic:'◎', c:'#4DA2FF', ch:'sui', bal:0, px:3.4},
+  {s:'USDC', n:'Native USDC',           ic:'$', c:'#2775CA', ch:'sui', bal:0, px:1},
+  {s:'haSUI',n:'Haedal Staked SUI',     ic:'h', c:'#F27A00', ch:'sui', bal:0, px:3.6},
+  {s:'suiUSDT',n:'Tether by Sui Bridge',ic:'₮', c:'#26A17B', ch:'sui', bal:0, px:1},
+  {s:'USDsui',n:'Sui Dollar',           ic:'D', c:'#5B8DEF', ch:'sui', bal:0, px:1},
+  {s:'suiUSDe',n:'eSui Dollar',         ic:'e', c:'#111827', ch:'sui', bal:0, px:1},
+  {s:'DEEP', n:'DeepBook',              ic:'D', c:'#0A3D62', ch:'sui', bal:0, px:0.12},
+  {s:'CETUS',n:'Cetus Protocol',        ic:'C', c:'#17C6A3', ch:'sui', bal:0, px:0.08},
+];
+const X_CHAINS=[
+  {id:'sui', n:'Sui',        c:'#4DA2FF', home:1},
+  {id:'all', n:'All chains', c:null},
+  {id:'eth', n:'Ethereum',   c:'#627EEA'},
+  {id:'base',n:'Base',       c:'#0052FF'},
+  {id:'arb', n:'Arbitrum',   c:'#12AAFF'},
+  {id:'sol', n:'Solana',     c:'#9945FF'},
+  {id:'btc', n:'Bitcoin',    c:'#F7931A'},
+  {id:'tron',n:'Tron',       c:'#EB0029'},
+  {id:'near',n:'NEAR',       c:'#00C08B'},
+  {id:'ton', n:'TON',        c:'#0098EA'},
+];
+const X_ASSETS=[
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'eth', bal:4820,  px:1},
+  {s:'ETH', n:'Ether',         ic:'Ξ', c:'#454A75', ch:'eth', bal:1.62,  px:3400},
+  {s:'USDT',n:'Tether USD',    ic:'₮', c:'#26A17B', ch:'eth', bal:980,   px:1},
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'base',bal:2150,  px:1},
+  {s:'ETH', n:'Ether',         ic:'Ξ', c:'#454A75', ch:'base',bal:0.44,  px:3400},
+  {s:'ARB', n:'Arbitrum',      ic:'A', c:'#12AAFF', ch:'arb', bal:1400,  px:0.46},
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'arb', bal:760,   px:1},
+  {s:'SOL', n:'Solana',        ic:'S', c:'#9945FF', ch:'sol', bal:22.5,  px:145},
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'sol', bal:1310,  px:1},
+  {s:'BTC', n:'Bitcoin',       ic:'₿', c:'#F7931A', ch:'btc', bal:0.047, px:66400},
+  {s:'USDT',n:'Tether USD',    ic:'₮', c:'#26A17B', ch:'tron',bal:530,   px:1},
+  {s:'NEAR',n:'NEAR Protocol', ic:'N', c:'#00C08B', ch:'near',bal:860,   px:2.3},
+  {s:'TON', n:'Toncoin',       ic:'T', c:'#0098EA', ch:'ton', bal:310,   px:5.1},
+];
+// Wallet integrations today: EVM, Solana, NEAR, Stellar → can sign directly.
+// Everything else (BTC, TON, Tron…) uses the deposit-address / QR path.
+const SIGNABLE=['eth','base','arb','sol','near'];
+const chOf=id=>X_CHAINS.find(c=>c.id===id)||{id:'sui',n:'Sui',c:'#4DA2FF'};
+const ALL_ASSETS=()=>SUI_ASSETS.concat(X_ASSETS);
+const isX=a=>a.ch!=='sui';
+const canSign=a=>!isX(a)||SIGNABLE.includes(a.ch);
+const fmt=(v,d)=>v.toLocaleString('en-US',{maximumFractionDigits:d===undefined?(v<1?6:2):d});
+const usd=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ── state ── */
+let screen='swap', showChg=false, filter='sui', target='pay';
+let paySel=SUI_ASSETS[0], getSel=SUI_ASSETS[1];
+let lendSel=SUI_ASSETS[1], liqSel=SUI_ASSETS[0];
+let lendAS=true, liqAS=true;
+const step={swap:0,lend:0,liq:0};
+let qrInt=null,qrLeft=900,qrTo=null,qrCtx='swap';
+
+/* ── screens ── */
+const COPY={
+  swap:{h:"Haedal's Swap — now reachable from 34 chains",
+    l:"Same card, same engine, same flow. The only change is <b>what the token picker can list</b>. Flip <b>Highlight what changed</b> to see every modified pixel.",
+    main:"The token picker gains a <b>chain rail</b> with <b>Sui selected by default</b> — so the list a user sees on open is exactly today's list. Other chains are one click away rather than behind a mode switch. Pick USDC on Base or SOL on Solana and the quote comes from the <b>Swap API</b> instead of Cetus; the swap settles on Sui. Sui↔Sui pairs still route through Cetus, untouched.<br><br>A swap stays <b>one transaction</b>: the quote returns a deposit address and the user simply sends the origin asset to it — no approval, no contract call. The vault screens use the same API to <b>bridge</b>, and then run Haedal's ordinary Sui deposit on top.",
+    pills:['Sui is the default view','Cetus stays the Sui engine','1 transaction, no approval'],
+    prod:'Swap API — quote + deposit address',
+    steps:[
+      'Keep Cetus for Sui↔Sui. When the selected asset is not on Sui, route the quote to the <b>Swap API</b> instead.',
+      'List what the picker can offer from <code class="ep">GET /supported-chains</code> and <code class="ep">GET /supported-tokens</code>, rather than hardcoding — new assets then appear without a release.',
+      'Request a quote with <code class="ep">POST /quote</code> (origin asset + amount, destination = the Sui asset, recipient = the user\u2019s Sui address). The response carries the rate, fees and a <b>single-use <code class="ep">depositAddress</code></b>.',
+      'The user sends the origin asset to that address — from their connected EVM/Solana/NEAR wallet, or by plain transfer from the QR. <b>No approval, no contract call on your side.</b>',
+      'Poll <code class="ep">GET /status</code> for the deposit, then show your normal success state. Your fee is set per-quote in the request.'],
+    docs:[['Swap API overview','https://docs.intents.aurora.dev/intents-swap/what-is-swap-api'],['API reference','https://docs.intents.aurora.dev/api-reference/swap-api-reference'],['Supported chains','https://docs.intents.aurora.dev/intents-swap/supported-chains'],['Supported assets','https://docs.intents.aurora.dev/intents-swap/supported-assets'],['API keys & fees','https://docs.intents.aurora.dev/getting-started/api-keys-and-fees'],['Fee collection','https://docs.intents.aurora.dev/getting-started/integration-best-practices/fees-collection']],
+    same:['The Swap card, its position and its styling','Pay / Receive panels and the flip control','Slippage control and settings','The token list a Sui user sees on open','Cetus routing for every Sui-native pair','“Powered by Cetus” when Cetus is used']},
+  lend:{h:"Lending Vault — deposit from any chain",
+    l:"Haedal already has an <b>Auto Swap</b> toggle that turns the token pill into a dropdown. We widen what that dropdown can list. No new control.",
+    main:"With <b>Auto Swap</b> on, the asset dropdown now includes cross-chain assets. The UI simply <b>gets the funds to Sui first</b>, then runs the deposit Haedal already has.<br><br><b>1 · Bridge to Sui</b> — the Swap API routes and converts the asset. The user either signs from their connected origin wallet, or sends to a <b>QR deposit address</b>; both are offered at this step because the quote returns the address immediately.<br><br><b>2 · Deposit</b> — once the funds land, this is an <b>ordinary Sui transaction</b> from the already-connected Sui wallet. Normal confirmation, normal vault entrypoint, nothing custom.",
+    pills:['Uses existing Auto Swap','No vault contract change','Bridge → Deposit'],
+    prod:'Swap API — bridge, then your existing deposit',
+    steps:[
+      'Widen the <b>Auto Swap</b> dropdown with the cross-chain universe from <code class="ep">GET /supported-chains</code> and <code class="ep">GET /supported-tokens</code>. No new control.',
+      'Step 1 · <b>Bridge</b>. <code class="ep">POST /quote</code> with the origin asset, destination = the vault\u2019s Sui asset, recipient = <b>the user\u2019s own Sui address</b>. The response carries the rate, fees and a single-use <code class="ep">depositAddress</code>.',
+      'Offer both inputs at that step: sign the transfer from the connected origin wallet (EVM, Solana, NEAR…), or render the <code class="ep">depositAddress</code> as a QR for any wallet or exchange. Same address either way.',
+      'Poll <code class="ep">GET /status</code> until the funds land on Sui, then enable step 2.',
+      'Step 2 · <b>Deposit</b>. This is <b>your existing Sui deposit call, unchanged</b> — the connected Sui wallet confirms it like any native deposit. Nothing of ours is involved.'],
+    docs:[['Swap API overview','https://docs.intents.aurora.dev/intents-swap/what-is-swap-api'],['API reference','https://docs.intents.aurora.dev/api-reference/swap-api-reference'],['Supported chains','https://docs.intents.aurora.dev/intents-swap/supported-chains'],['Deposits / QR addresses','https://docs.intents.aurora.dev/intents-deposits/what-are-intents-deposits'],['Deposits quickstart','https://docs.intents.aurora.dev/intents-deposits/quickstart'],['API keys & fees','https://docs.intents.aurora.dev/getting-started/api-keys-and-fees'],['UX recommendations','https://docs.intents.aurora.dev/getting-started/integration-best-practices/ux-recommendations']],
+    same:['Vault page layout, stats, charts and info cards','Deposit / Withdraw tabs and the amount field','The incentive-staking toggle and its copy','Vault contracts, receipt token and fee structure','Native Sui deposits — byte-for-byte identical']},
+  liq:{h:"Liquidity Vault — one asset, any chain, both legs",
+    l:"The <b>Zap</b> toggle already lets one asset fund a two-sided position. We extend the source universe beyond Sui — a pattern already running in production on other chains.",
+    main:"With <b>Zap</b> on, a single asset from any chain is brought to Sui, then split across both legs in the pool ratio and deposited into the Cetus position Haedal manages.<br><br>Same shape as the Lending Vault: <b>1 · Bridge to Sui</b> — from the connected origin wallet or by QR deposit address — then <b>2 · Deposit</b>, an ordinary Sui transaction from the connected Sui wallet. The zap logic itself is untouched.",
+    pills:['Uses existing Zap','Bridge → Deposit','Both legs funded'],
+    prod:'Swap API — same bridge, existing zap',
+    steps:[
+      'Identical wiring to the Lending Vault — the same Swap API quote, mounted inside the existing <b>Zap</b> dropdown.',
+      'Step 1 · <b>Bridge</b> the single asset to its Sui equivalent, delivered to the user\u2019s Sui address — connected origin wallet or QR deposit address.',
+      'Step 2 · <b>Deposit</b> calls your <b>existing zap entrypoint</b>, confirmed by the connected Sui wallet. The pool-ratio split and the Cetus position stay entirely in Haedal\u2019s code.',
+      'Optional, no frontend work: list these vaults in the <b>Yield API</b> so partners outside Sui can surface them and route deposits in the same way.'],
+    docs:[['Intents Connect','https://docs.intents.aurora.dev/intents-connect/readme-1'],['TypeScript SDK','https://docs.intents.aurora.dev/intents-connect/intents-connect-sdk/typescript-sdk'],['Deposits / QR addresses','https://docs.intents.aurora.dev/intents-deposits/what-are-intents-deposits'],['Deposits quickstart','https://docs.intents.aurora.dev/intents-deposits/quickstart'],['UX recommendations','https://docs.intents.aurora.dev/getting-started/integration-best-practices/ux-recommendations'],['Sui · one-signature post','https://intents.aurora.dev/blog/sui-one-signature-cross-chain-execution']],
+    same:['LP breakdown, strategy and rebalancing logic','Deposit / Withdraw tabs and capacity meter','Cetus pools and Haedal’s rebalancing','Performance / management fees','Native Sui zaps — unchanged']}
+};
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));
+  screen=b.dataset.s;
+  document.querySelectorAll('.scr').forEach(s=>s.style.display='none');
+  document.getElementById('scr-'+screen).style.display='';
+  const c=COPY[screen];
+  document.getElementById('h1').textContent=c.h;
+  document.getElementById('lede').innerHTML=c.l;
+  paintRail();
+});
+function paintRail(){
+  const c=COPY[screen];
+  document.getElementById('railMain').innerHTML=c.main;
+  document.getElementById('railPills').innerHTML=c.pills.map(p=>`<span class="mini g">${p}</span>`).join('');
+  document.getElementById('railSame').innerHTML=c.same.map(x=>
+    `<li class="same"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg><div>${x}</div></li>`).join('');
+  document.getElementById('integProd').textContent=c.prod;
+  document.getElementById('integSteps').innerHTML=c.steps.map(x=>`<li>${x}</li>`).join('');
+  document.getElementById('integDocs').innerHTML=c.docs.map(([t,u])=>
+    `<a href="${u}" target="_blank" rel="noopener">${t}
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></a>`).join('');
+}
+function toggleChg(){ showChg=!showChg; document.body.classList.toggle('show-chg',showChg);
+  document.getElementById('chgT').classList.toggle('on',showChg); }
+
+/* ── picker ── */
+function openPicker(t){ target=t; filter='sui';
+  document.getElementById('q').value='';
+  renderChains(); renderAssets();
+  document.getElementById('pickOvl').classList.add('open');
+  setTimeout(()=>document.getElementById('q').focus(),150); }
+function closePicker(){ document.getElementById('pickOvl').classList.remove('open'); }
+function renderChains(){
+  const all=ALL_ASSETS();
+  document.getElementById('chrail').innerHTML=X_CHAINS.map(c=>{
+    const n=c.id==='all'?all.length:all.filter(a=>a.ch===c.id).length;
+    const dot=c.c?`<span class="cdot" style="background:${c.c}"></span>`
+      :`<span class="cdot" style="background:linear-gradient(135deg,#4DA2FF,#9945FF 45%,#F7931A)"></span>`;
+    return `<button class="chrow${filter===c.id?' on':''}${c.home?' home':''}" onclick="setFilter('${c.id}')">${dot}<span>${c.n}</span><span class="ccount">${n}</span></button>`;
+  }).join('');
+}
+function setFilter(id){ filter=id; renderChains(); renderAssets(); }
+function curSel(){ return target==='pay'?paySel:target==='get'?getSel:target==='lend'?lendSel:liqSel; }
+function renderAssets(){
+  const q=(document.getElementById('q').value||'').trim().toLowerCase();
+  // a query searches every chain; the rail filter only applies when not searching
+  const pool = q ? ALL_ASSETS() : ALL_ASSETS().filter(a=>filter==='all'||a.ch===filter);
+  const list=pool.filter(a=>!q||a.s.toLowerCase().includes(q)||a.n.toLowerCase().includes(q)||chOf(a.ch).n.toLowerCase().includes(q));
+  const sel=curSel();
+  document.getElementById('alist').innerHTML=list.map((a,i)=>{
+    const ch=chOf(a.ch), on=a.s===sel.s&&a.ch===sel.ch;
+    const badge=isX(a)?`<span class="chbadge" style="background:${ch.c}"></span>`:'';
+    return `<button class="arow${on?' on':''}" onclick="pick('${a.s}','${a.ch}')">
+      <span class="tico" style="background:${a.c};width:28px;height:28px;font-size:10px">${a.ic}${badge}</span>
+      <span class="ainf"><span class="asym">${a.s}${isX(a)?' <span class="xchain">cross-chain</span>':''}</span>
+        <span class="anm">${a.n}${isX(a)?' · on '+ch.n:''}</span></span>
+      <span class="abal"><b>${a.bal?fmt(a.bal,4):'0'}</b><span>${a.bal?usd(a.bal*a.px):'$0'}</span></span>
+    </button>`;
+  }).join('')||`<div style="padding:22px;text-align:center;color:var(--faint);font-size:13px">No tokens found</div>`;
+}
+function pick(s,ch){
+  const a=(ch==='sui'?SUI_ASSETS:X_ASSETS).find(x=>x.s===s&&x.ch===ch);
+  if(target==='pay')paySel=a; else if(target==='get')getSel=a;
+  else if(target==='lend'){lendSel=a; if(isX(a)) {lendAS=true; paintAS('lend');}}
+  else {liqSel=a; if(isX(a)){liqAS=true; paintAS('liq');}}
+  step[screen]=0;
+  closePicker(); onPay(); onLend(); onLiq();
+}
+
+/* ── auto swap / zap ── */
+function toggleAS(k){
+  if(k==='lend'){ lendAS=!lendAS; if(!lendAS) lendSel=SUI_ASSETS[1]; }
+  else { liqAS=!liqAS; if(!liqAS) liqSel=SUI_ASSETS[0]; }
+  paintAS(k); step[k]=0; onLend(); onLiq();
+}
+function paintAS(k){
+  const on=k==='lend'?lendAS:liqAS;
+  document.getElementById(k+'AS').classList.toggle('on',on);
+  document.getElementById(k+'Pill').style.opacity=on?'1':'.55';
+  document.getElementById(k+'Pill').style.pointerEvents=on?'':'none';
+}
+
+/* ── swap screen ── */
+function onPay(){
+  const v=parseFloat(document.getElementById('payIn').value)||0;
+  document.getElementById('payIco').style.background=paySel.c;
+  document.getElementById('payIco').textContent=paySel.ic;
+  document.getElementById('paySym').textContent=paySel.s;
+  document.getElementById('getIco').style.background=getSel.c;
+  document.getElementById('getIco').textContent=getSel.ic;
+  document.getElementById('getSym').textContent=getSel.s;
+  const inUsd=v*paySel.px, out=inUsd*0.9965/getSel.px;
+  document.getElementById('payUsd').textContent=usd(inUsd);
+  document.getElementById('payOn').textContent=isX(paySel)?'· on '+chOf(paySel.ch).n:'';
+  document.getElementById('getIn').value=fmt(out);
+  document.getElementById('getUsd').textContent=usd(out*getSel.px);
+  const x=isX(paySel), r=document.getElementById('swRoute');
+  r.style.display=x?'':'none';
+  if(x) r.innerHTML=`<svg width="13" height="13" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>
+    <span><b>${paySel.s} on ${chOf(paySel.ch).n}</b> → <b>${getSel.s} on Sui</b> via the Swap API. No bridging, no SUI for gas. ${canSign(paySel)?'A single transfer from your existing wallet — no approval, no contract call.':'Your wallet can’t sign on '+chOf(paySel.ch).n+' — send to the deposit address below instead.'}</span>`;
+  document.getElementById('swPow').innerHTML = x
+    ? `Powered by <b>Aurora Intents</b> · settles on Sui`
+    : `Powered by Cetus`;
+  paintCta('swap');
+}
+/* ── lending ── */
+function onLend(){
+  const v=parseFloat(document.getElementById('lendIn').value)||0;
+  document.getElementById('lendIco').style.background=lendSel.c;
+  document.getElementById('lendIco').textContent=lendSel.ic;
+  document.getElementById('lendSym').textContent=lendSel.s;
+  const inUsd=v*lendSel.px;
+  document.getElementById('lendUsd').textContent=usd(inUsd)+(isX(lendSel)?' · on '+chOf(lendSel.ch).n:'');
+  const x=isX(lendSel), r=document.getElementById('lendRoute');
+  r.style.display=x?'':'none';
+  if(x) r.innerHTML=`<svg width="13" height="13" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>
+    <span><b>${fmt(v)} ${lendSel.s}</b> on ${chOf(lendSel.ch).n} → <b>${usd(inUsd*0.9965)} USDC</b> on Sui. Bridge it ${canSign(lendSel)?'from your wallet or by QR':'by QR — your wallet can’t sign on '+chOf(lendSel.ch).n}, then confirm the deposit in your Sui wallet. Routing, conversion and gas handled.</span>`;
+  paintCta('lend');
+}
+/* ── liquidity ── */
+function onLiq(){
+  const v=parseFloat(document.getElementById('liqIn').value)||0;
+  document.getElementById('liqIco').style.background=liqSel.c;
+  document.getElementById('liqIco').textContent=liqSel.ic;
+  document.getElementById('liqSym').textContent=liqSel.s;
+  const inUsd=v*liqSel.px, net=inUsd*0.9965;
+  document.getElementById('liqUsd').textContent=usd(inUsd)+(isX(liqSel)?' · on '+chOf(liqSel.ch).n:'');
+  document.getElementById('liqSplit').innerHTML=
+    `<div class="r"><span class="k">SUI leg · 45.9%</span><span class="v">${fmt(net*0.459/3.4,3)} SUI</span></div>
+     <div class="r"><span class="k">USDC leg · 54.1%</span><span class="v">${fmt(net*0.541,2)} USDC</span></div>
+     <div class="r"><span class="k">Total deposit</span><span class="v good">${usd(net)}</span></div>`;
+  const x=isX(liqSel), r=document.getElementById('liqRoute');
+  r.style.display=x?'':'none';
+  if(x) r.innerHTML=`<svg width="13" height="13" viewBox="0 0 288 288"><path fill="#00C896" d="M144,45c-12.8,0-24.5,7.2-30.2,18.7L57.6,176.2c-8.3,16.7-1.6,36.9,15.1,45.3c4.7,2.3,9.9,3.6,15.1,3.6h112.5c18.6,0,33.8-15.1,33.8-33.7c0-5.2-1.2-10.4-3.6-15.1L174.2,63.7C168.5,52.2,156.8,45,144,45z"/></svg>
+    <span><b>${fmt(v)} ${liqSel.s}</b> on ${chOf(liqSel.ch).n} → routed to Sui, split across <b>both legs</b>. Bridge it ${canSign(liqSel)?'from your wallet or by QR':'by QR — your wallet can’t sign on '+chOf(liqSel.ch).n}, then confirm the deposit in your Sui wallet.</span>`;
+  paintCta('liq');
+}
+
+/* ── CTA / steps ── */
+const SEL={swap:()=>paySel,lend:()=>lendSel,liq:()=>liqSel};
+const IDS={swap:{cta:'swCta',steps:'swOne',alt:'swAlt',verb:'Swap',oneTx:true},
+           lend:{cta:'lendCta',steps:'lendSteps',alt:'lendAlt',a:'ld1',b:'ld2',l:'ldL',verb:'Deposit'},
+           liq:{cta:'liqCta',steps:'liqSteps',alt:'liqAlt',a:'lq1',b:'lq2',l:'lqL',verb:'Deposit'}};
+function paintAlt(k){
+  // The QR option belongs to the BRIDGE step in every flow — the Swap API quote
+  // returns the deposit address up front, so it is available before anything is signed.
+  // Step 2 on the vaults is an ordinary Sui deposit, which has no QR alternative.
+  const i=IDS[k], a=SEL[k](), x=isX(a);
+  const show = x && canSign(a) && step[k] === 0;
+  document.getElementById(i.alt).style.display = show ? '' : 'none';
+}
+function paintCta(k){
+  const i=IDS[k], a=SEL[k](), cta=document.getElementById(i.cta), x=isX(a);
+
+  if(i.oneTx){                                    // ── Swap ──
+    document.getElementById(i.steps).style.display = x&&canSign(a) ? 'flex':'none';
+    paintAlt(k);
+    const o=document.getElementById('oneAsset'); if(o)o.textContent=a.s;
+    if(step[k]===0){ cta.classList.remove('done'); cta.disabled=false;
+      cta.textContent = !x ? 'Connect Wallet' : canSign(a) ? 'Swap' : 'Get deposit address'; }
+    return;
+  }
+
+  // ── Vaults: bridge to Sui, then an ordinary Sui deposit ──
+  document.getElementById(i.steps).style.display = x ? 'flex':'none';
+  paintAlt(k);
+  if(step[k]===0){
+    cta.classList.remove('done'); cta.disabled=false;
+    cta.textContent = !x ? 'Connect' : canSign(a) ? 'Bridge to Sui' : 'Get deposit address';
+    document.getElementById(i.a).className='stp on';
+    document.getElementById(i.a).querySelector('i').textContent='1';
+    document.getElementById(i.l).className='stpline';
+    document.getElementById(i.b).className='stp';
+    document.getElementById(i.b).querySelector('i').textContent='2';
+  }
+}
+function act(k){
+  const i=IDS[k], a=SEL[k](), cta=document.getElementById(i.cta);
+  if(!isX(a)){ cta.disabled=true; cta.innerHTML='<span class="spin"></span> Connecting wallet…';
+    setTimeout(()=>{cta.disabled=false;cta.textContent=i.verb;},1100); return; }
+  if(i.oneTx && !canSign(a)){ openQr(k); return; }   // swap on a chain the wallet can't sign
+  if(i.oneTx){                       // Swap API — a single transfer, no approval
+    cta.disabled=true; cta.innerHTML='<span class="spin"></span> Swapping…';
+    setTimeout(()=>{ cta.classList.add('done'); cta.innerHTML='✓ Done'; showOk(k); },1500);
+    return;
+  }
+  if(step[k]===0){
+    if(!canSign(a)){ openQr(k); return; }      // no signable wallet → bridge by transfer
+    step[k]=1; cta.disabled=true; cta.innerHTML='<span class="spin"></span> Bridging to Sui…';
+    setTimeout(()=>bridged(k),1500);
+  } else if(step[k]===2){
+    step[k]=3; cta.disabled=true; cta.innerHTML='<span class="spin"></span> Depositing…';
+    setTimeout(()=>{
+      document.getElementById(i.b).className='stp ok';
+      document.getElementById(i.b).querySelector('i').textContent='✓';
+      cta.classList.add('done'); cta.innerHTML='✓ Done';
+      paintAlt(k);
+      showOk(k);
+    },1400);
+  }
+}
+function bridged(k){                      // step 1 done → Sui deposit is next
+  const i=IDS[k], cta=document.getElementById(i.cta);
+  document.getElementById(i.a).className='stp ok';
+  document.getElementById(i.a).querySelector('i').textContent='✓';
+  document.getElementById(i.l).className='stpline ok';
+  document.getElementById(i.b).className='stp on';
+  step[k]=2; cta.classList.remove('done'); cta.disabled=false; cta.textContent='Confirm deposit';
+  paintAlt(k);
+}
+const swAct=()=>act('swap'), lendAct=()=>act('lend'), liqAct=()=>act('liq');
+
+function showOk(k){
+  const a=SEL[k](), v=parseFloat(document.getElementById(k==='swap'?'payIn':k==='lend'?'lendIn':'liqIn').value)||0;
+  const net=v*a.px*0.9965;
+  document.getElementById('okAmt').textContent = k==='swap'? fmt(net/getSel.px)+' '+getSel.s : usd(net);
+  document.getElementById('okSub').textContent = k==='swap'?'received on Sui'
+    : k==='lend'?'deposited into the USDC Lending Vault':'deposited into the SUI–USDC Liquidity Vault';
+  document.getElementById('okOvl').classList.add('open');
+}
+function closeOk(){ document.getElementById('okOvl').classList.remove('open'); step[screen]=0; paintCta(screen); }
+
+/* ── QR ── */
+const CLK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+const CPI='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const CHK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+function addrFor(ch){
+  const hex=n=>{let s='';for(let i=0;i<n;i++)s+='0123456789abcdef'[Math.floor(Math.random()*16)];return s;};
+  const b58=n=>{const c='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';let s='';for(let i=0;i<n;i++)s+=c[Math.floor(Math.random()*c.length)];return s;};
+  if(ch==='btc')return 'bc1q'+b58(38);
+  if(ch==='sol')return b58(44);
+  if(ch==='tron')return 'T'+b58(33);
+  if(ch==='near')return 'haedal-'+hex(6)+'.near';
+  if(ch==='ton')return 'UQ'+b58(46);
+  return '0x'+hex(40);
+}
+function openQr(k){
+  qrCtx=k; const a=SEL[k](), ch=chOf(a.ch);
+  const v=parseFloat(document.getElementById(k==='swap'?'payIn':k==='lend'?'lendIn':'liqIn').value)||0;
+  document.getElementById('qrAmt').textContent=fmt(v)+' '+a.s;
+  document.getElementById('qrChain').textContent='Send on '+ch.n+' only';
+  document.getElementById('qrDot').style.background=ch.c;
+  document.getElementById('qrWT').textContent=a.s;
+  document.getElementById('qrWC').textContent=ch.n;
+  const full=addrFor(a.ch);
+  const el=document.getElementById('qrAddr'); el.textContent=full.slice(0,10)+'…'+full.slice(-6); el.dataset.full=full;
+  document.getElementById('qrCp').innerHTML=CPI+' Copy';
+  document.getElementById('qrCp').classList.remove('ok');
+  const st=document.getElementById('qrSt'); st.className='qrst'; st.innerHTML='<span class="pulse"></span> Waiting for transfer…';
+  drawQr(document.getElementById('qrC'),full); startTimer();
+  document.getElementById('qrOvl').classList.add('open');
+  clearTimeout(qrTo);
+  qrTo=setTimeout(()=>{ st.className='qrst det';
+    // On a vault the QR only completes the BRIDGE — the Sui deposit is still to confirm.
+    st.innerHTML=CHK+(qrCtx==='swap'?' Received — settling on Sui':' Received on Sui — confirm the deposit');
+    clearInterval(qrInt); document.getElementById('qrTimer').style.display='none';
+    setTimeout(()=>{ closeQr();
+      if(qrCtx==='swap'){ showOk(qrCtx); return; }
+      bridged(qrCtx);
+    },1500); },4200);
+}
+function closeQr(){ clearTimeout(qrTo); clearInterval(qrInt); document.getElementById('qrOvl').classList.remove('open'); }
+function startTimer(){ clearInterval(qrInt); qrLeft=900;
+  const t=document.getElementById('qrTimer'); t.style.display=''; t.className='qrt'; paintT();
+  qrInt=setInterval(()=>{ qrLeft--; if(qrLeft<=0){clearInterval(qrInt); t.className='qrt exp';
+    t.innerHTML=CLK+' Address expired — reopen for a fresh one'; return;} paintT(); },1000); }
+function paintT(){ const m=Math.floor(qrLeft/60),s=qrLeft%60;
+  document.getElementById('qrTimer').innerHTML=`${CLK} Valid for <b>${m}:${String(s).padStart(2,'0')}</b> · quote indicative`; }
+function copyAddr(){ const f=document.getElementById('qrAddr').dataset.full||'';
+  navigator.clipboard&&navigator.clipboard.writeText(f);
+  const b=document.getElementById('qrCp'); b.classList.add('ok'); b.innerHTML=CHK+' Copied';
+  setTimeout(()=>{b.classList.remove('ok');b.innerHTML=CPI+' Copy';},1600); }
+function drawQr(cv,seed){
+  const x=cv.getContext('2d'),S=cv.width,M=25,c=S/M;
+  x.fillStyle='#fff';x.fillRect(0,0,S,S);x.fillStyle='#2B2520';
+  let h=0;for(let i=0;i<seed.length;i++)h=(h*31+seed.charCodeAt(i))&0x7fffffff;
+  const rnd=()=>{h=(h*1103515245+12345)&0x7fffffff;return h/0x7fffffff;};
+  const g=Array.from({length:M},()=>Array(M).fill(0));
+  const eye=(r,q)=>{for(let i=0;i<7;i++)for(let j=0;j<7;j++){
+    const b=i===0||i===6||j===0||j===6,n=i>=2&&i<=4&&j>=2&&j<=4;g[r+i][q+j]=(b||n)?1:0;}};
+  eye(0,0);eye(0,M-7);eye(M-7,0);
+  for(let r=0;r<M;r++)for(let q=0;q<M;q++){
+    if((r<8&&q<8)||(r<8&&q>=M-8)||(r>=M-8&&q<8))continue;
+    g[r][q]=rnd()>0.55?1:0;}
+  for(let r=0;r<M;r++)for(let q=0;q<M;q++)if(g[r][q])x.fillRect(q*c,r*c,c-.6,c-.6);
+}
+
+document.getElementById('pickOvl').addEventListener('click',function(e){if(e.target===this)closePicker();});
+document.getElementById('qrOvl').addEventListener('click',function(e){if(e.target===this)closeQr();});
+document.getElementById('okOvl').addEventListener('click',function(e){if(e.target===this)closeOk();});
+document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
+  if(document.getElementById('okOvl').classList.contains('open'))closeOk();
+  else if(document.getElementById('qrOvl').classList.contains('open'))closeQr();
+  else if(document.getElementById('pickOvl').classList.contains('open'))closePicker(); });
+
+paintAS('lend'); paintAS('liq'); onPay(); onLend(); onLiq(); paintRail();
+</script>
