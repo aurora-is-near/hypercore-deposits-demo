@@ -268,7 +268,7 @@ body.show-chg .only-chg{display:block}
 body.locked>*:not(#gate){display:none!important}
 .gbox{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh-lg);
   padding:28px;width:100%;max-width:340px;text-align:center}
-.glogo{display:flex;align-items:center;justify-content:center;gap:9px;font-size:18px;font-weight:700;margin-bottom:20px}
+.glogo{display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:700;letter-spacing:-.02em;color:var(--ink);margin-bottom:20px}
 .gsub{display:none}
 .gin{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;background:var(--line-2);
   padding:12px 14px;font-family:inherit;font-size:14px;color:var(--ink);text-align:center;letter-spacing:.08em;outline:none}
@@ -301,8 +301,8 @@ code.ep{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;b
 <div id="gate">
   <div class="gbox">
     <div class="glogo">
-      <svg width="26" height="26" viewBox="400 400 280 280" aria-hidden="true"><rect fill="#fb4d01" x="434.44" y="435.86" width="211.12" height="208.28" rx="28.9" ry="28.9"/><path fill="#f2f2f1" d="M588.61,479.07c-4.58,0-8.82,2.34-11.22,6.19l-25.83,37.82c-.84,1.25-.5,2.93.76,3.76,1.02.67,2.38.59,3.31-.2l25.42-21.75c.42-.37,1.07-.34,1.45.08.17.19.26.44.26.69v68.1c0,.56-.47,1.01-1.04,1.01-.31,0-.59-.13-.79-.36l-76.82-90.75c-2.5-2.91-6.18-4.59-10.04-4.6h-2.69c-7.27,0-13.16,5.81-13.16,12.98v95.91c-.01,7.17,5.88,12.98,13.15,12.98,4.58,0,8.82-2.34,11.22-6.19l25.83-37.82c.84-1.25.5-2.93-.76-3.76-1.02-.67-2.38-.59-3.31.2l-25.42,21.75c-.42.37-1.07.34-1.45-.08-.17-.19-.26-.44-.26-.69v-68.12c0-.56.47-1.01,1.04-1.01.3,0,.59.13.79.36l76.81,90.77c2.5,2.91,6.18,4.59,10.04,4.6h2.69c7.27,0,13.16-5.8,13.17-12.97v-95.92c.01-7.17-5.88-12.98-13.15-12.98h0Z"/></svg>
-      Aurora Intents
+      <svg width="22" height="22" viewBox="0 0 512 512" aria-hidden="true"><path d="M255.995 56C227.587 56 201.618 72.0497 188.914 97.4572L63.9181 347.461C52.2936 370.71 53.5358 398.321 67.2006 420.428C80.8653 442.535 105.003 456 131 456H381C406.997 456 431.135 442.544 444.799 420.428C458.464 398.321 459.706 370.71 448.082 347.461L323.077 97.4572C310.373 72.0497 284.404 56 255.995 56Z" fill="currentColor"/></svg>
+      <span>Aurora Intents</span>
     </div>
     <input class="gin" id="gpw" type="password" placeholder="Password" autocomplete="off"
       onkeydown="if(event.key==='Enter')unlock()" oninput="this.classList.remove('bad');document.getElementById('gerr').textContent=''">
