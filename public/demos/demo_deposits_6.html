@@ -1,0 +1,801 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<title>Aurora Intents — Integration Prototype</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{
+  /* Thena, read off thena.fi */
+  --bg:#0D090F; --surface:#281B2E; --surface-2:#35243D; --row:#130D17;
+  --line:#2A1E31; --line-2:#422D4C;
+  --ink:#F3F2F4; --ink-2:#D9D5DB; --muted:#B3ABB7; --faint:#7E7585;
+  --mag:#DC00D4; --mag-dk:#B800B1; --mag-ink:#FCE6FB; --mag-10:rgba(220,0,212,.12);
+  /* Aurora */
+  --aurora:#00C896; --aurora-dk:#00926E; --aurora-tint:#0C2A23; --aurora-line:#1D6A54;
+  --sh:0 6px 24px rgba(0,0,0,.4); --sh-lg:0 24px 60px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input{font-family:inherit}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+
+/* top bar */
+.bar{background:rgba(13,9,15,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:200}
+.bar .wrap{display:flex;align-items:center;gap:13px;padding:13px 20px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;letter-spacing:.02em}
+.sep{width:1px;height:20px;background:var(--line-2)}
+.sub{font-size:12.5px;color:var(--muted)}
+.spacer{flex:1}
+.toggle-chg{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:500;color:var(--ink-2);cursor:pointer;user-select:none}
+.sw{width:38px;height:22px;border-radius:999px;background:var(--surface-2);position:relative;transition:.2s;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.toggle-chg.on .sw{background:var(--aurora)}
+.toggle-chg.on .sw::after{transform:translateX(16px)}
+
+/* intro */
+.intro{padding:34px 20px 20px}
+.eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mag);margin-bottom:9px}
+h1{margin:0 0 9px;font-size:30px;line-height:1.15;letter-spacing:-.025em;font-weight:700;text-wrap:balance}
+.lede{font-size:15px;color:var(--ink-2);max-width:74ch;margin:0}
+
+/* stage */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 332px;gap:22px;padding:8px 20px 56px;align-items:start}
+@media(max-width:1060px){.stage{grid-template-columns:1fr}}
+
+.frame{background:#0A070C;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--sh)}
+.frame-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:#16101A;border-bottom:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+.frame-url{flex:1;text-align:center;font-size:11px;color:var(--faint);background:#0D090F;border:1px solid var(--line);
+  border-radius:999px;padding:3px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* thena chrome */
+.th-nav{display:flex;align-items:center;gap:16px;padding:13px 18px;font-size:13.5px;font-weight:500;color:var(--ink-2);flex-wrap:wrap}
+.th-nav .n{cursor:default;padding:5px 9px;border-radius:7px}
+.th-nav .n.on{background:var(--surface-2);color:#fff}
+.th-connect{margin-left:auto;background:var(--mag);color:var(--mag-ink);border:none;border-radius:8px;padding:9px 15px;font-size:13.5px;font-weight:500}
+.th-body{padding:4px 18px 20px}
+
+.addhead{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.pairico{display:flex}
+.pairico span{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1a1420}
+.pairico span+span{margin-left:-9px}
+.addhead .t{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.addhead .s{font-size:12px;color:var(--muted)}
+
+.aprs{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
+@media(max-width:720px){.aprs{grid-template-columns:repeat(2,1fr)}}
+.aprc{background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:11px;text-align:center}
+.aprc.on{border-color:var(--mag);background:linear-gradient(var(--mag-10),var(--mag-10)),var(--surface)}
+.aprc .v{font-size:13px;font-weight:700;color:var(--mag)}
+.aprc .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* deposit panel */
+.tabrow{display:flex;gap:9px;align-items:stretch;margin-bottom:11px}
+.tabs-d{flex:1;display:flex;gap:4px;background:var(--surface);border-radius:8px;padding:5px}
+.td{flex:1;border:none;background:none;color:var(--muted);font-size:13.5px;font-weight:400;padding:8px 12px;border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;white-space:nowrap}
+.td:hover{color:var(--ink-2)}
+.td.on{background:var(--surface-2);color:var(--ink-2);font-weight:500}
+.gear{width:42px;flex-shrink:0;background:var(--surface);border:none;border-radius:8px;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:default}
+
+.trow{background:var(--row);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px}
+.trow-top{display:flex;align-items:center;gap:10px}
+.tin{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--ink);font-size:21px;font-weight:500;letter-spacing:-.01em;padding:0}
+.tin::placeholder{color:#4A4252}
+.tpill{display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:999px;
+  padding:6px 11px 6px 6px;color:var(--ink);font-size:13.5px;font-weight:500;cursor:pointer;flex-shrink:0}
+.tpill:hover{border-color:#5A3E66}
+.tpill.flat{cursor:default}
+.tico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#1a1420;flex-shrink:0}
+.trow-bot{display:flex;justify-content:space-between;align-items:center;margin-top:5px;font-size:11.5px;color:var(--muted)}
+
+.cta{width:100%;border:none;border-radius:8px;padding:13px;font-size:15px;font-weight:500;cursor:pointer;transition:.15s;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.cta.main{background:var(--mag);color:var(--mag-ink)}
+.cta.main:hover{background:var(--mag-dk)}
+.cta.main:disabled{opacity:.65;cursor:default}
+.cta.done{background:var(--aurora-dk);color:#fff}
+.cta.alt{background:none;border:1px solid var(--line-2);color:var(--ink-2);margin-top:9px}
+.cta.alt:hover{border-color:var(--aurora);color:var(--aurora)}
+.spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:2s}}
+
+/* route + steps */
+.route{display:flex;gap:8px;background:var(--aurora-tint);border:1px solid var(--aurora-line);border-radius:12px;
+  padding:11px 13px;font-size:12.5px;color:#9FE8CF;line-height:1.5;margin-bottom:10px}
+.route svg{flex-shrink:0;margin-top:2px}
+.steps{display:flex;align-items:center;gap:9px;margin-bottom:11px;font-size:12px;color:var(--faint)}
+.stp{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.stp i{width:17px;height:17px;border-radius:50%;background:var(--surface-2);color:var(--muted);font-style:normal;font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center}
+.stp.on{color:var(--ink)}
+.stp.on i{background:var(--mag);color:#fff}
+.stp.ok{color:var(--aurora)}
+.stp.ok i{background:var(--aurora);color:#06241B}
+.stpline{flex:1;height:1px;background:var(--line-2)}
+.stpline.ok{background:var(--aurora)}
+.outrow{background:var(--row);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:10px}
+.outrow .ohead{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);margin-bottom:9px}
+.olegs{display:flex;gap:10px}
+.oleg{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.oleg .tico{width:20px;height:20px;font-size:10px}
+.oleg .ov{min-width:0}
+.oleg .oamt{font-size:15px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oleg .ousd{font-size:11.5px;color:var(--muted)}
+.oleg .opc{font-size:10px;color:var(--faint);margin-left:4px;font-weight:500}
+.odiv{width:1px;background:var(--line);flex-shrink:0}
+
+/* rail */
+.rail{display:flex;flex-direction:column;gap:13px;position:sticky;top:76px}
+@media(max-width:1060px){.rail{position:static}}
+.rcard{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:16px}
+.rcard h3{font-size:14px;font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:7px}
+.rcard p{font-size:12.5px;color:var(--ink-2);margin:0;line-height:1.6}
+.ul{list-style:none;margin:0;padding:0}
+.ul li{display:flex;gap:8px;font-size:12.5px;color:var(--ink-2);margin-bottom:8px;line-height:1.5}
+.ul li svg{flex-shrink:0;margin-top:3px}
+.ul li.same svg{color:var(--faint)}
+.ul li.new svg{color:var(--aurora)}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.mini{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--aurora-tint);color:#6FDCB8;border:1px solid var(--aurora-line)}
+
+/* how to integrate — our side of the proposal, tinted */
+.rcard.tech{background:var(--aurora-tint);border-color:var(--aurora-line)}
+.rcard.tech h3{color:#5FE0BC}
+.ilabel{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#4E9C83;margin:0 0 9px}
+.ol{list-style:none;margin:0;padding:0;counter-reset:st}
+.ol li{counter-increment:st;position:relative;padding-left:24px;font-size:12.5px;line-height:1.55;color:#C6E8DC;margin-bottom:9px}
+.ol li::before{content:counter(st);position:absolute;left:0;top:1px;width:16px;height:16px;border-radius:50%;
+  background:var(--aurora);color:#06241B;font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+code.ep{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:rgba(0,0,0,.35);
+  border:1px solid var(--aurora-line);border-radius:5px;padding:1px 5px;color:#7FE6C4;white-space:nowrap}
+.dl{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--aurora-line)}
+.dl a{font-size:11px;font-weight:600;color:#7FE6C4;background:rgba(0,0,0,.3);border:1px solid var(--aurora-line);
+  border-radius:999px;padding:4px 9px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.dl a:hover{color:#fff;border-color:var(--aurora)}
+
+/* change highlight — the badge sits fully OUTSIDE its element, never over its content */
+.chg{position:relative}
+body.show-chg .chg{outline:2px dashed var(--aurora);outline-offset:3px;border-radius:12px}
+body.show-chg .chg::after{
+  content:attr(data-chg);position:absolute;bottom:100%;left:8px;margin-bottom:7px;z-index:40;
+  background:var(--aurora);color:#06241B;font-size:9px;font-weight:800;letter-spacing:.04em;
+  text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap;pointer-events:none}
+body.show-chg .chg{overflow:visible!important}
+/* highlight mode reserves the strip each badge needs, so none lands on a neighbour */
+body.show-chg .route.chg,body.show-chg .steps.chg,body.show-chg .tabs-d.chg,
+body.show-chg .outrow.chg{margin-top:26px}
+body.show-chg .trow.chg{margin-top:24px}
+body.show-chg .mdl-body{padding-top:22px}
+
+/* modals */
+.ovl{position:fixed;inset:0;background:rgba(5,3,7,.72);backdrop-filter:blur(5px);z-index:300;display:flex;
+  align-items:center;justify-content:center;padding:22px;opacity:0;pointer-events:none;transition:.18s}
+.ovl.open{opacity:1;pointer-events:all}
+.mdl{background:#17101C;border:1px solid var(--line-2);border-radius:18px;width:100%;max-width:458px;box-shadow:var(--sh-lg);
+  max-height:84vh;display:flex;flex-direction:column;overflow:hidden;transform:translateY(10px) scale(.98);transition:transform .2s cubic-bezier(.32,.72,0,1)}
+.ovl.open .mdl{transform:none}
+.mdl-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px}
+.mdl-t{font-size:15.5px;font-weight:600}
+.xbtn{background:none;border:none;color:var(--muted);cursor:pointer;padding:5px;border-radius:7px;display:flex}
+.xbtn:hover{background:var(--surface-2);color:var(--ink)}
+.srch{display:flex;align-items:center;gap:8px;margin:0 18px 12px;background:var(--row);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;color:var(--faint)}
+.srch input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:13.5px}
+.srch input::placeholder{color:var(--faint)}
+.mdl-body{display:flex;min-height:330px;max-height:52vh;border-top:1px solid var(--line)}
+.chrail-wrap{width:152px;flex-shrink:0;display:flex;min-height:0;position:relative}
+.chrail{width:100%;overflow-y:auto;padding:8px;border-right:1px solid var(--line);background:#120C16}
+.chrow{width:100%;display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--muted);
+  font-size:12.5px;padding:7px 8px;border-radius:8px;cursor:pointer;text-align:left}
+.chrow:hover{background:var(--surface);color:var(--ink-2)}
+.chrow.on{background:var(--surface-2);color:var(--ink);font-weight:500}
+.chrow.home{order:-1}
+.cdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.chrow span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ccount{font-size:10.5px;color:var(--faint)}
+.alist{flex:1;overflow-y:auto;padding:8px}
+.arow{width:100%;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);
+  padding:9px 10px;border-radius:10px;cursor:pointer;text-align:left}
+.arow:hover{background:var(--surface)}
+.arow .nm{font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:6px}
+.arow .sb{font-size:11px;color:var(--muted)}
+.arow .r{margin-left:auto;text-align:right}
+.arow .bal{font-size:13px;font-weight:500}
+.arow .busd{font-size:11px;color:var(--muted)}
+.chtag{font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
+.empty{padding:28px 14px;text-align:center;color:var(--faint);font-size:12.5px}
+.qrnote{display:flex;gap:7px;margin:0 8px 8px;background:var(--aurora-tint);border:1px solid var(--aurora-line);
+  border-radius:10px;padding:9px 11px;font-size:11.5px;color:#9FE8CF;line-height:1.45}
+.qrnote svg{flex-shrink:0;margin-top:1px}
+
+/* QR */
+.qrb{padding:0 18px 18px;text-align:center}
+.qrs{font-size:13px;color:var(--ink-2);margin-bottom:4px}
+.qrt{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+.qrbox{background:#fff;border-radius:12px;padding:11px;display:inline-flex;margin-bottom:12px}
+.qrch{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:9px}
+.qradr{display:flex;align-items:center;gap:9px;background:var(--row);border:1px solid var(--line);border-radius:10px;
+  padding:9px 11px;margin-bottom:11px}
+.qradr code{flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--ink-2);overflow:hidden;text-align:left}
+.cp{flex-shrink:0;border:none;background:none;color:var(--mag);font-size:11.5px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:7px}
+.cp:hover{background:var(--mag-10)}
+.cp.ok{color:var(--aurora)}
+.warn{background:#2A1A0C;border:1px solid #58360F;border-radius:10px;padding:10px 12px;font-size:11.5px;color:#E8B67A;
+  text-align:left;display:flex;gap:8px;margin-bottom:11px;line-height:1.45}
+.warn svg{flex-shrink:0;margin-top:1px}
+.qrst{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px;border-radius:10px;
+  background:var(--surface);font-size:13px;font-weight:500;color:var(--ink-2)}
+.qrst.det{background:var(--aurora-tint);color:#6FDCB8}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--mag);animation:pl 1.4s ease-in-out infinite}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.pulse{animation:none}}
+.succ{text-align:center;padding:12px 0}
+.sring{width:54px;height:54px;border-radius:50%;background:var(--aurora-tint);border:2px solid var(--aurora);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--aurora)}
+.samt{font-size:25px;font-weight:600;letter-spacing:-.02em}
+.ssub{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* gate */
+#gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+#gate.off{display:none}
+body.locked>*:not(#gate){display:none!important}
+.gbox{background:var(--surface);border:1px solid var(--line-2);border-radius:18px;box-shadow:var(--sh-lg);
+  padding:28px;width:100%;max-width:340px;text-align:center}
+.glogo{display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:700;
+  letter-spacing:-.02em;color:var(--ink);margin-bottom:20px}
+.gin{width:100%;border:1px solid var(--line-2);border-radius:10px;background:var(--row);padding:12px 14px;
+  font-size:14px;color:var(--ink);text-align:center;letter-spacing:.08em;outline:none}
+.gin:focus{border-color:var(--mag)}
+.gin.bad{border-color:#E05252}
+.gbtn{width:100%;margin-top:10px;border:none;border-radius:10px;background:var(--mag);color:var(--mag-ink);
+  font-size:14px;font-weight:600;padding:12px;cursor:pointer}
+.gbtn:hover{background:var(--mag-dk)}
+.gerr{font-size:12px;color:#FF7B7B;margin-top:9px;min-height:15px}
+</style></head>
+
+<div id="gate">
+  <div class="gbox">
+    <div class="glogo">
+      <svg width="22" height="22" viewBox="0 0 512 512" aria-hidden="true"><path d="M255.995 56C227.587 56 201.618 72.0497 188.914 97.4572L63.9181 347.461C52.2936 370.71 53.5358 398.321 67.2006 420.428C80.8653 442.535 105.003 456 131 456H381C406.997 456 431.135 442.544 444.799 420.428C458.464 398.321 459.706 370.71 448.082 347.461L323.077 97.4572C310.373 72.0497 284.404 56 255.995 56Z" fill="currentColor"/></svg>
+      <span>Aurora Intents</span>
+    </div>
+    <input class="gin" id="gpw" type="password" placeholder="Password" autocomplete="off"
+      onkeydown="if(event.key==='Enter')unlock()" oninput="this.classList.remove('bad');document.getElementById('gerr').textContent=''">
+    <button class="gbtn" onclick="unlock()">Enter</button>
+    <div class="gerr" id="gerr"></div>
+  </div>
+</div>
+<script>
+/* decided at parse time so the page never flashes behind the gate */
+(function(){
+  let ok=false; try{ ok=sessionStorage.getItem('demo-unlock')==='1'; }catch(e){}
+  if(ok) document.getElementById('gate').classList.add('off');
+  else { document.body.classList.add('locked');
+         addEventListener('DOMContentLoaded',()=>document.getElementById('gpw').focus()); }
+})();
+</script>
+
+<div class="bar"><div class="wrap">
+  <div class="logo">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="#DC00D4" opacity=".18"/><path d="M5 7h14M12 7v11M8.5 7v6M15.5 7v6" stroke="#DC00D4" stroke-width="2" stroke-linecap="round"/></svg>
+    THENA
+  </div>
+  <span class="sep"></span>
+  <span class="sub">× Aurora Intents — integration prototype</span>
+  <span class="spacer"></span>
+  <div class="toggle-chg" id="chgT" onclick="toggleChg()"><span class="sw"></span>Highlight what changed</div>
+</div></div>
+
+<div class="wrap intro">
+  <div class="eyebrow">Minimum UX impact</div>
+  <h1>Add Liquidity — fundable from 34 chains</h1>
+  <p class="lede">Thena already offers two ways into a pool. We add one tab beside them and change nothing else.
+    Every modified element is outlined — switch off <b>Highlight what changed</b> to see the clean UI.</p>
+</div>
+
+<div class="wrap stage">
+  <div>
+    <div class="frame">
+      <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="frame-url">thena.fi/pools/add-liquidity → WBNB / BTCB</span></div>
+      <div class="th-nav"><span class="n">Trade</span><span class="n on">Pools</span><span class="n">Dashboard</span>
+        <span class="n">Analytics</span><span class="n">More</span>
+        <button class="th-connect">Connect Wallet</button></div>
+      <div class="th-body">
+
+        <div class="addhead">
+          <div class="pairico">
+            <span style="background:#F3BA2F">B</span><span style="background:#F7931A;color:#fff">₿</span>
+          </div>
+          <div><div class="t">Add Liquidity</div><div class="s">Concentrated Liquidity · WBNB / BTCB</div></div>
+        </div>
+
+        <div class="aprs">
+          <div class="aprc"><div class="v">APR: 0.684%</div><div class="l">Full Range</div></div>
+          <div class="aprc"><div class="v">APR: 7.05%</div><div class="l">Broad ±20%</div></div>
+          <div class="aprc"><div class="v">APR: 14.16%</div><div class="l">Moderate ±10%</div></div>
+          <div class="aprc on"><div class="v">APR: 28.83%</div><div class="l">Tight ±5%</div></div>
+        </div>
+
+        <div class="tabrow">
+          <div class="tabs-d chg" data-chg="New — one added tab">
+            <button class="td on" id="t-pool" onclick="setMode('pool')">Pool Token Deposit</button>
+            <button class="td" id="t-int" onclick="setMode('int')">
+              <svg width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M255.995 56C227.587 56 201.618 72.0497 188.914 97.4572L63.9181 347.461C52.2936 370.71 53.5358 398.321 67.2006 420.428C80.8653 442.535 105.003 456 131 456H381C406.997 456 431.135 442.544 444.799 420.428C458.464 398.321 459.706 370.71 448.082 347.461L323.077 97.4572C310.373 72.0497 284.404 56 255.995 56Z"/></svg>
+              Deposit with Intents</button>
+            <button class="td" id="t-zap" onclick="setMode('zap')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg>
+              Zapper Deposit</button>
+          </div>
+          <button class="gear" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.63.67 1.1 1.31 1.1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+
+        <!-- ── Pool Token Deposit / Zapper Deposit (today) ── -->
+        <div id="pane-native">
+          <div class="trow">
+            <div class="trow-top">
+              <input class="tin" id="nIn1" value="0.0" oninput="onNative()">
+              <button class="tpill" onclick="alert('Thena’s own token list — untouched by this prototype.')">
+                <span class="tico" style="background:#F3BA2F">B</span>WBNB
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+            </div>
+            <div class="trow-bot"><span id="nUsd1">$0</span><span>Balance: 0</span></div>
+          </div>
+          <div class="trow" id="nRow2">
+            <div class="trow-top">
+              <input class="tin" id="nIn2" value="0.0" oninput="onNative()">
+              <span class="tpill flat"><span class="tico" style="background:#F7931A;color:#fff">₿</span>BTCB</span>
+            </div>
+            <div class="trow-bot"><span id="nUsd2">$0</span><span>Balance: 0</span></div>
+          </div>
+          <button class="cta main">Connect Wallet</button>
+        </div>
+
+        <!-- ── Deposit with Intents (proposed) ── -->
+        <div id="pane-int" style="display:none">
+          <div class="trow chg" data-chg="Same row, wider token list">
+            <div class="trow-top">
+              <input class="tin" id="iIn" value="1000" oninput="onInt()">
+              <button class="tpill" onclick="openPicker()">
+                <span class="tico" id="iIco" style="background:#2775CA;color:#fff">$</span>
+                <span id="iSym">USDC</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+            </div>
+            <div class="trow-bot"><span id="iUsd">$0</span><span id="iBal">Balance: 0</span></div>
+          </div>
+
+          <div class="outrow chg" data-chg="New — what lands in the pool">
+            <div class="ohead"><span>Deposited into the position</span><span id="oTot">$0</span></div>
+            <div class="olegs">
+              <div class="oleg">
+                <span class="tico" style="background:#F3BA2F">B</span>
+                <span class="ov"><div class="oamt" id="oAmt1">0 WBNB<span class="opc">52.3%</span></div>
+                  <div class="ousd" id="oUsd1">$0</div></span>
+              </div>
+              <div class="odiv"></div>
+              <div class="oleg">
+                <span class="tico" style="background:#F7931A;color:#fff">₿</span>
+                <span class="ov"><div class="oamt" id="oAmt2">0 BTCB<span class="opc">47.7%</span></div>
+                  <div class="ousd" id="oUsd2">$0</div></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="route chg" id="iRoute" data-chg="New — route summary (optional)" style="display:none"></div>
+
+          <div class="steps chg" id="iSteps" data-chg="New — 2 steps" style="display:none">
+            <span class="stp on" id="s1"><i>1</i>Bridge to BNB Chain</span><span class="stpline" id="sL"></span>
+            <span class="stp" id="s2"><i>2</i>Deposit</span></div>
+
+          <button class="cta main" id="iCta" onclick="act()">Connect Wallet</button>
+          <button class="cta alt" id="iAlt" style="display:none" onclick="openQr()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+            Deposit by QR instead</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- rail -->
+  <div class="rail">
+    <div class="rcard">
+      <h3>What changed here</h3>
+      <p id="railMain"></p>
+      <div class="pill-row" id="railPills"></div>
+    </div>
+    <div class="rcard tech">
+      <h3>
+        <svg width="14" height="14" viewBox="0 0 512 512" fill="#00C896" aria-hidden="true"><path d="M255.995 56C227.587 56 201.618 72.0497 188.914 97.4572L63.9181 347.461C52.2936 370.71 53.5358 398.321 67.2006 420.428C80.8653 442.535 105.003 456 131 456H381C406.997 456 431.135 442.544 444.799 420.428C458.464 398.321 459.706 370.71 448.082 347.461L323.077 97.4572C310.373 72.0497 284.404 56 255.995 56Z"/></svg>
+        How to integrate</h3>
+      <p class="ilabel">Swap API — bridge, then your existing zap</p>
+      <ol class="ol">
+        <li>Add one tab. Everything behind it is a quote plus your existing deposit — no new page, no router change.</li>
+        <li>Build the token list from <code class="ep">GET /supported-chains</code> and <code class="ep">GET /supported-tokens</code> so new assets appear without a release.</li>
+        <li>Step 1 · <b>Bridge</b>. <code class="ep">POST /quote</code> with the origin asset, destination = the pool asset on BNB Chain, recipient = <b>the user's own address</b>. The response carries the rate, fees and a single-use <code class="ep">depositAddress</code>.</li>
+        <li>Offer both inputs at that step: on an <b>EVM chain</b> the user signs from their connected wallet; on any <b>non-EVM chain</b> they send to the <code class="ep">depositAddress</code>, rendered as a QR. Same address either way.</li>
+        <li>Poll <code class="ep">GET /status</code> until funds land, then enable step 2.</li>
+        <li>Step 2 · <b>Deposit</b> calls your <b>existing zapper entrypoint</b>, confirmed by the connected BNB Chain wallet. The ratio split and the position stay entirely in Thena's code.</li>
+      </ol>
+      <div class="dl" id="integDocs"></div>
+    </div>
+    <div class="rcard">
+      <h3>Stays exactly the same</h3>
+      <ul class="ul" id="railSame"></ul>
+    </div>
+    <div class="rcard">
+      <h3>Two ways in</h3>
+      <ul class="ul">
+        <li class="new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Connected wallet</b> — any EVM chain. No bridging, no BNB for gas.</div></li>
+        <li class="new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>QR deposit address</b> — every non-EVM chain (Solana, Sui, BTC, Tron, TON, NEAR…), and any funds sitting on an exchange. Plain transfer, auto-detected.</div></li>
+        <li class="new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><div>Both are the <b>same step 1</b> — the bridge. Step 2 is then a plain BNB Chain deposit.</div></li>
+      </ul>
+      <div class="pill-row"><span class="mini">34 chains</span><span class="mini">BNB Chain as source + destination</span><span class="mini">Non-custodial</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- picker -->
+<div class="ovl" id="pickOvl"><div class="mdl">
+  <div class="mdl-h"><span class="mdl-t">Select Token</span>
+    <button class="xbtn" onclick="closePicker()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="srch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="q" placeholder="Search by Token or Address" oninput="renderAssets()"></div>
+  <div class="mdl-body">
+    <div class="chrail-wrap chg" data-chg="New — chain rail"><div class="chrail" id="chrail"></div></div>
+    <div class="alist" id="alist"></div>
+  </div>
+</div></div>
+
+<!-- QR -->
+<div class="ovl" id="qrOvl"><div class="mdl" style="max-width:390px">
+  <div class="mdl-h"><span class="mdl-t">Deposit by transfer</span>
+    <button class="xbtn" onclick="closeQr()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="qrb">
+    <div class="qrs">Send <b id="qrAmt"></b> from any wallet or exchange</div>
+    <div class="qrt" id="qrTimer"></div>
+    <div class="qrbox"><canvas id="qrC" width="160" height="160"></canvas></div>
+    <div class="qrch"><span class="cdot" id="qrDot" style="width:11px;height:11px"></span><span id="qrChain"></span></div>
+    <div class="qradr"><code id="qrAddr"></code><button class="cp" id="qrCp" onclick="copyAddr()"></button></div>
+    <div class="warn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      <span>Send only <b id="qrWT"></b> on <b id="qrWC"></b>. Single-use address.</span></div>
+    <div class="qrst" id="qrSt"><span class="pulse"></span> Waiting for transfer…</div>
+  </div>
+</div></div>
+
+<!-- success -->
+<div class="ovl" id="okOvl"><div class="mdl" style="max-width:360px">
+  <div class="mdl-h"><span class="mdl-t">Done</span>
+    <button class="xbtn" onclick="closeOk()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="qrb"><div class="succ">
+    <div class="sring"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+    <div class="samt" id="okAmt"></div><div class="ssub">deposited into the WBNB / BTCB position</div>
+    <div class="route" style="margin-top:14px;text-align:left"><svg width="13" height="13" viewBox="0 0 512 512" fill="#00C896"><path d="M255.995 56C227.587 56 201.618 72.0497 188.914 97.4572L63.9181 347.461C52.2936 370.71 53.5358 398.321 67.2006 420.428C80.8653 442.535 105.003 456 131 456H381C406.997 456 431.135 442.544 444.799 420.428C458.464 398.321 459.706 370.71 448.082 347.461L323.077 97.4572C310.373 72.0497 284.404 56 255.995 56Z"/></svg>
+      <span>Settled on BNB Chain. Thena's contracts received the asset exactly as they would from a native user.</span></div>
+    <button class="cta main" onclick="closeOk()">Close</button>
+  </div></div>
+</div></div>
+
+<script>
+/* ── data ── */
+const HOME={id:'bnb',n:'BNB Chain',c:'#F3BA2F'};
+const BNB_ASSETS=[
+  {s:'WBNB',n:'Wrapped BNB',  ic:'B', c:'#F3BA2F', ch:'bnb', bal:0, px:620},
+  {s:'BTCB',n:'Bitcoin BEP20',ic:'₿', c:'#F7931A', ch:'bnb', bal:0, px:66400},
+  {s:'USDT',n:'Tether USD',   ic:'₮', c:'#26A17B', ch:'bnb', bal:0, px:1},
+  {s:'USDC',n:'USD Coin',     ic:'$', c:'#2775CA', ch:'bnb', bal:0, px:1},
+  {s:'THE', n:'Thena',        ic:'T', c:'#DC00D4', ch:'bnb', bal:0, px:0.31},
+  {s:'CAKE',n:'PancakeSwap',  ic:'C', c:'#D1884F', ch:'bnb', bal:0, px:2.1},
+];
+const X_CHAINS=[
+  {id:'bnb', n:'BNB Chain',  c:'#F3BA2F', home:1},
+  {id:'all', n:'All chains', c:null},
+  {id:'eth', n:'Ethereum',   c:'#627EEA'},
+  {id:'base',n:'Base',       c:'#0052FF'},
+  {id:'arb', n:'Arbitrum',   c:'#12AAFF'},
+  {id:'sol', n:'Solana',     c:'#9945FF'},
+  {id:'sui', n:'Sui',        c:'#4DA2FF'},
+  {id:'btc', n:'Bitcoin',    c:'#F7931A'},
+  {id:'tron',n:'Tron',       c:'#EB0029'},
+  {id:'near',n:'NEAR',       c:'#00C08B'},
+  {id:'ton', n:'TON',        c:'#0098EA'},
+];
+const X_ASSETS=[
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'eth', bal:4820,  px:1},
+  {s:'ETH', n:'Ether',         ic:'Ξ', c:'#454A75', ch:'eth', bal:1.62,  px:3400},
+  {s:'USDT',n:'Tether USD',    ic:'₮', c:'#26A17B', ch:'eth', bal:980,   px:1},
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'base',bal:2150,  px:1},
+  {s:'ETH', n:'Ether',         ic:'Ξ', c:'#454A75', ch:'base',bal:0.44,  px:3400},
+  {s:'ARB', n:'Arbitrum',      ic:'A', c:'#12AAFF', ch:'arb', bal:1400,  px:0.46},
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'arb', bal:760,   px:1},
+  {s:'SOL', n:'Solana',        ic:'S', c:'#9945FF', ch:'sol', bal:22.5,  px:145},
+  {s:'USDC',n:'USD Coin',      ic:'$', c:'#2775CA', ch:'sol', bal:1310,  px:1},
+  {s:'SUI', n:'Sui',           ic:'◎', c:'#4DA2FF', ch:'sui', bal:640,   px:3.4},
+  {s:'BTC', n:'Bitcoin',       ic:'₿', c:'#F7931A', ch:'btc', bal:0.047, px:66400},
+  {s:'USDT',n:'Tether USD',    ic:'₮', c:'#26A17B', ch:'tron',bal:530,   px:1},
+  {s:'NEAR',n:'NEAR Protocol', ic:'N', c:'#00C08B', ch:'near',bal:860,   px:2.3},
+  {s:'TON', n:'Toncoin',       ic:'T', c:'#0098EA', ch:'ton', bal:310,   px:5.1},
+];
+// EVM chains only sign in-page. Every non-EVM chain (Solana, NEAR, Sui, BTC,
+// Tron, TON…) deposits by transfer to the QR address instead.
+// Everything else (BTC, TON, Tron…) uses the deposit-address / QR path.
+const SIGNABLE=['eth','base','arb'];   // EVM only
+const ALL_ASSETS=()=>BNB_ASSETS.concat(X_ASSETS);
+const chOf=id=>X_CHAINS.find(c=>c.id===id)||HOME;
+const isX=a=>a.ch!=='bnb';
+const canSign=a=>!isX(a)||SIGNABLE.includes(a.ch);
+const fmt=(v,d)=>v.toLocaleString('en-US',{maximumFractionDigits:d===undefined?(v<1?6:2):d});
+const usd=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ── state ── */
+let mode='pool', showChg=true, filter='bnb';
+let sel=X_ASSETS.find(a=>a.s==='USDC'&&a.ch==='base');
+let step=0, qrInt=null, qrLeft=900, qrTo=null;
+
+const COPY={
+  pool:{main:"Thena's own flow, untouched. Two pool tokens, both already on BNB Chain — exactly what a user sees today.",
+    pills:['Nothing changed here'],
+    same:['The whole Add Liquidity page and its range controls','APR tier cards and the selected range','Pool Token Deposit, field for field','The Connect Wallet CTA','Pool contracts, fees and position logic']},
+  zap:{main:"Thena's existing <b>Zapper</b>, untouched. One asset funds both legs — but the asset still has to be on BNB Chain to begin with. That is the ceiling the new tab removes.",
+    pills:['Nothing changed here','The pattern we extend'],
+    same:['The Zapper itself and its ratio split','The token list it offers today','Slippage and settings','Pool contracts, fees and position logic']},
+  int:{main:"<b>One added tab</b>, beside the two that exist. Inside it, the same deposit row — the only difference is that the token list now spans <b>34 chains</b>, with BNB Chain selected by default so the list on open is the one a user already knows.<br><br><b>1 · Bridge to BNB Chain</b> — the Swap API routes and converts the asset. The user either signs from their connected origin wallet, or sends to a <b>QR deposit address</b>; both are offered at this step because the quote returns the address immediately.<br><br><b>2 · Deposit</b> — once the funds land, this is an <b>ordinary BNB Chain transaction</b> through Thena's existing zapper. Normal confirmation, normal entrypoint, nothing custom.",
+    pills:['One new tab','No pool contract change','Bridge → Deposit'],
+    same:['Both existing deposit tabs, byte-for-byte','The range chart, APR tiers and settings','Thena’s zapper, ratio split and position logic','Pool contracts and fee structure','Native BNB Chain deposits — unchanged']}
+};
+const D='https://docs.intents.aurora.dev';
+const DOCS=[['Swap API overview',D+'/intents-swap/what-is-swap-api'],['API reference',D+'/api-reference/swap-api-reference'],
+  ['Supported chains',D+'/intents-swap/supported-chains'],['Supported assets',D+'/intents-swap/supported-assets'],
+  ['Deposits / QR addresses',D+'/intents-deposits/what-are-intents-deposits'],['Deposits quickstart',D+'/intents-deposits/quickstart'],
+  ['API keys & fees',D+'/getting-started/api-keys-and-fees'],['Fee collection',D+'/getting-started/integration-best-practices/fees-collection'],
+  ['UX recommendations',D+'/getting-started/integration-best-practices/ux-recommendations']];
+
+/* ── gate ── */
+function unlock(){
+  const i=document.getElementById('gpw');
+  if(i.value.trim().toLowerCase()==='thena'){
+    try{ sessionStorage.setItem('demo-unlock','1'); }catch(e){}
+    document.body.classList.remove('locked');
+    document.getElementById('gate').classList.add('off');
+  }else{
+    i.classList.add('bad'); i.select();
+    document.getElementById('gerr').textContent='Incorrect password.';
+  }
+}
+
+/* ── chrome ── */
+function paintChg(){ document.body.classList.toggle('show-chg',showChg);
+  document.getElementById('chgT').classList.toggle('on',showChg); }
+function toggleChg(){ showChg=!showChg; paintChg(); }
+
+function setMode(m){
+  mode=m;
+  for(const [k,id] of [['pool','t-pool'],['zap','t-zap'],['int','t-int']])
+    document.getElementById(id).classList.toggle('on',k===m);
+  document.getElementById('pane-native').style.display = m==='int'?'none':'';
+  document.getElementById('pane-int').style.display    = m==='int'?'':'none';
+  // the Zapper funds both legs from one asset, so it hides the second row
+  document.getElementById('nRow2').style.display = m==='zap'?'none':'';
+  paintRail();
+}
+function paintRail(){
+  const c=COPY[mode];
+  document.getElementById('railMain').innerHTML=c.main;
+  document.getElementById('railPills').innerHTML=c.pills.map(p=>`<span class="mini">${p}</span>`).join('');
+  document.getElementById('railSame').innerHTML=c.same.map(x=>
+    `<li class="same"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg><div>${x}</div></li>`).join('');
+}
+document.getElementById('integDocs').innerHTML=DOCS.map(([t,u])=>
+  `<a href="${u}" target="_blank" rel="noopener">${t}<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></a>`).join('');
+
+/* ── native panes ── */
+function onNative(){
+  const v1=parseFloat(document.getElementById('nIn1').value)||0;
+  const v2=parseFloat(document.getElementById('nIn2').value)||0;
+  document.getElementById('nUsd1').textContent=usd(v1*620);
+  document.getElementById('nUsd2').textContent=usd(v2*66400);
+}
+
+/* ── picker ── */
+function openPicker(){ filter='bnb'; document.getElementById('q').value='';
+  renderChains(); renderAssets();
+  document.getElementById('pickOvl').classList.add('open');
+  setTimeout(()=>document.getElementById('q').focus(),150); }
+function closePicker(){ document.getElementById('pickOvl').classList.remove('open'); }
+function renderChains(){
+  const all=ALL_ASSETS();
+  document.getElementById('chrail').innerHTML=X_CHAINS.map(c=>{
+    const n=c.id==='all'?all.length:all.filter(a=>a.ch===c.id).length;
+    const dot=c.c?`<span class="cdot" style="background:${c.c}"></span>`
+      :`<span class="cdot" style="background:linear-gradient(135deg,#F3BA2F,#9945FF 45%,#0052FF)"></span>`;
+    return `<button class="chrow${filter===c.id?' on':''}${c.home?' home':''}" onclick="setFilter('${c.id}')">${dot}<span>${c.n}</span><span class="ccount">${n}</span></button>`;
+  }).join('');
+}
+function setFilter(id){ filter=id; renderChains(); renderAssets(); }
+function renderAssets(){
+  const q=(document.getElementById('q').value||'').trim().toLowerCase();
+  // a query searches every chain; the rail filter only applies when not searching
+  const pool = q ? ALL_ASSETS() : ALL_ASSETS().filter(a=>filter==='all'||a.ch===filter);
+  const list = pool.filter(a=>!q||a.s.toLowerCase().includes(q)||a.n.toLowerCase().includes(q)||chOf(a.ch).n.toLowerCase().includes(q));
+  const el=document.getElementById('alist');
+  if(!list.length){ el.innerHTML='<div class="empty">No token matches that search.</div>'; return; }
+  const anyQr=list.some(a=>isX(a)&&!canSign(a));
+  el.innerHTML=(anyQr?`<div class="qrnote"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Non-EVM chains can't sign in-page — those deposit by sending to a QR address instead. Same two steps.</span></div>`:'')
+    + list.map(a=>{
+    const ch=chOf(a.ch), i=ALL_ASSETS().indexOf(a);
+    return `<button class="arow" onclick="pick(${i})">
+      <span class="tico" style="background:${a.c};${a.ic==='₿'||a.ic==='Ξ'||a.ic==='$'||a.ic==='₮'?'color:#fff':''}">${a.ic}</span>
+      <span><span class="nm">${a.s}${isX(a)?`<span class="chtag">${ch.n}</span>`:''}</span><span class="sb">${a.n}</span></span>
+      <span class="r"><span class="bal">${fmt(a.bal)}</span><br><span class="busd">${usd(a.bal*a.px)}</span></span></button>`;
+  }).join('');
+}
+function pick(i){
+  sel=ALL_ASSETS()[i];
+  // carry a sensible amount across a switch — 1,000 USDC and 1,000 BTC are not the same ask
+  if(sel.bal>0) document.getElementById('iIn').value=fmt(sel.bal);
+  closePicker(); step=0; resetSteps(); onInt();
+}
+
+/* ── intents pane ── */
+const POOL={a:{s:'WBNB',px:620,  w:.523},
+            b:{s:'BTCB',px:66400,w:.477}};
+function paintLegs(netUsd){
+  document.getElementById('oTot').textContent=usd(netUsd);
+  for(const [k,ids] of [['a',['oAmt1','oUsd1']],['b',['oAmt2','oUsd2']]]){
+    const leg=POOL[k], side=netUsd*leg.w;
+    document.getElementById(ids[0]).innerHTML=
+      `${fmt(side/leg.px, side/leg.px<1?6:4)} ${leg.s}<span class="opc">${(leg.w*100).toFixed(1)}%</span>`;
+    document.getElementById(ids[1]).textContent=usd(side);
+  }
+}
+function onInt(){
+  const v=parseFloat(document.getElementById('iIn').value)||0, inUsd=v*sel.px;
+  // what actually lands in the position: the bridge takes its cut before the split
+  paintLegs(isX(sel) ? inUsd*0.9965 : inUsd);
+  document.getElementById('iIco').style.background=sel.c;
+  document.getElementById('iIco').style.color=('₿Ξ$₮'.includes(sel.ic))?'#fff':'#1a1420';
+  document.getElementById('iIco').textContent=sel.ic;
+  document.getElementById('iSym').textContent=sel.s;
+  document.getElementById('iUsd').textContent=usd(inUsd);
+  document.getElementById('iBal').textContent='Balance: '+fmt(sel.bal)+(isX(sel)?' on '+chOf(sel.ch).n:'');
+  const r=document.getElementById('iRoute');
+  if(isX(sel)&&v>0){
+    const net=inUsd*0.9965;
+    r.style.display='flex';
+    r.innerHTML=`<svg width="13" height="13" viewBox="0 0 512 512" fill="#00C896"><path d="M255.995 56C227.587 56 201.618 72.0497 188.914 97.4572L63.9181 347.461C52.2936 370.71 53.5358 398.321 67.2006 420.428C80.8653 442.535 105.003 456 131 456H381C406.997 456 431.135 442.544 444.799 420.428C458.464 398.321 459.706 370.71 448.082 347.461L323.077 97.4572C310.373 72.0497 284.404 56 255.995 56Z"/></svg>
+      <span><b>${fmt(v)} ${sel.s}</b> on ${chOf(sel.ch).n} → <b>${usd(net)}</b> split across <b>both legs</b>.
+      Bridge it ${canSign(sel)?'from your wallet or by QR':'by QR — '+chOf(sel.ch).n+' is non-EVM, so it deposits by transfer'},
+      then confirm the deposit in your BNB Chain wallet. Routing, conversion and gas handled.</span>`;
+  } else r.style.display='none';
+  paintCta();
+}
+function resetSteps(){
+  document.getElementById('s1').className='stp on';
+  document.getElementById('s1').querySelector('i').textContent='1';
+  document.getElementById('sL').className='stpline';
+  document.getElementById('s2').className='stp';
+  document.getElementById('s2').querySelector('i').textContent='2';
+}
+function paintAlt(){
+  // The QR option belongs to the BRIDGE step — the quote returns the address up front.
+  // Step 2 is an ordinary BNB Chain deposit, which has no QR alternative.
+  document.getElementById('iAlt').style.display = (isX(sel)&&canSign(sel)&&step===0) ? '' : 'none';
+}
+function paintCta(){
+  const cta=document.getElementById('iCta'), x=isX(sel);
+  document.getElementById('iSteps').style.display = x?'flex':'none';
+  paintAlt();
+  if(step===0){
+    cta.classList.remove('done'); cta.disabled=false;
+    cta.textContent = !x ? 'Connect Wallet' : canSign(sel) ? 'Bridge to BNB Chain' : 'Get deposit address';
+  }
+}
+function bridged(){                       // step 1 done → BNB Chain deposit is next
+  const cta=document.getElementById('iCta');
+  document.getElementById('s1').className='stp ok';
+  document.getElementById('s1').querySelector('i').textContent='✓';
+  document.getElementById('sL').className='stpline ok';
+  document.getElementById('s2').className='stp on';
+  step=2; cta.classList.remove('done'); cta.disabled=false; cta.textContent='Confirm deposit';
+  paintAlt();
+}
+function act(){
+  const cta=document.getElementById('iCta');
+  if(!isX(sel)){ cta.disabled=true; cta.innerHTML='<span class="spin"></span> Connecting wallet…';
+    setTimeout(()=>{cta.disabled=false;cta.textContent='Deposit';},1100); return; }
+  if(step===0){
+    if(!canSign(sel)){ openQr(); return; }      // no signable wallet → bridge by transfer
+    step=1; cta.disabled=true; cta.innerHTML='<span class="spin"></span> Bridging to BNB Chain…';
+    setTimeout(bridged,1500);
+  } else if(step===2){
+    step=3; cta.disabled=true; cta.innerHTML='<span class="spin"></span> Depositing…';
+    setTimeout(()=>{
+      document.getElementById('s2').className='stp ok';
+      document.getElementById('s2').querySelector('i').textContent='✓';
+      cta.classList.add('done'); cta.innerHTML='✓ Done';
+      paintAlt(); showOk();
+    },1400);
+  }
+}
+function showOk(){
+  const v=parseFloat(document.getElementById('iIn').value)||0;
+  document.getElementById('okAmt').textContent=usd(v*sel.px*0.9965);
+  document.getElementById('okOvl').classList.add('open');
+}
+function closeOk(){ document.getElementById('okOvl').classList.remove('open');
+  step=0; resetSteps(); paintCta(); }
+
+/* ── QR ── */
+const CHK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const CPI='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+function addrFor(ch){
+  const seeds={btc:'bc1q',tron:'T',ton:'UQ',sol:'',near:'',eth:'0x',base:'0x',arb:'0x',sui:'0x',bnb:'0x'};
+  const al='abcdefghijklmnopqrstuvwxyz0123456789';
+  let s=seeds[ch]!==undefined?seeds[ch]:'0x', n=ch==='btc'?38:ch==='tron'?33:ch==='ton'?46:ch==='sol'?44:40;
+  let h=0; for(const c of ch) h=(h*31+c.charCodeAt(0))>>>0;
+  for(let i=0;i<n;i++){ h=(h*1103515245+12345)>>>0; s+=al[h%al.length]; }
+  return s;
+}
+function drawQr(cv,txt){
+  const ctx=cv.getContext('2d'), N=29, px=cv.width/N;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+  let h=0; for(const c of txt) h=(h*31+c.charCodeAt(0))>>>0;
+  ctx.fillStyle='#000';
+  const finder=(x,y)=>{ ctx.fillRect(x*px,y*px,7*px,7*px);
+    ctx.fillStyle='#fff'; ctx.fillRect((x+1)*px,(y+1)*px,5*px,5*px);
+    ctx.fillStyle='#000'; ctx.fillRect((x+2)*px,(y+2)*px,3*px,3*px); };
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+    const inF=(x<8&&y<8)||(x>N-9&&y<8)||(x<8&&y>N-9);
+    if(inF) continue;
+    h=(h*1103515245+12345)>>>0;
+    if((h>>>16)%100<47) ctx.fillRect(x*px,y*px,px,px);
+  }
+  finder(0,0); finder(N-7,0); finder(0,N-7);
+}
+function startTimer(){
+  qrLeft=900; const el=document.getElementById('qrTimer'); el.style.display='';
+  const t=()=>{ const m=Math.floor(qrLeft/60), s=String(qrLeft%60).padStart(2,'0');
+    el.innerHTML=`Address valid for <b>${m}:${s}</b> — quotes are indicative until the transfer lands.`; };
+  t(); clearInterval(qrInt); qrInt=setInterval(()=>{ qrLeft--; if(qrLeft<=0){clearInterval(qrInt);} t(); },1000);
+}
+function openQr(){
+  const ch=chOf(sel.ch), v=parseFloat(document.getElementById('iIn').value)||0;
+  document.getElementById('qrAmt').textContent=fmt(v)+' '+sel.s;
+  document.getElementById('qrChain').textContent='Send on '+ch.n+' only';
+  document.getElementById('qrDot').style.background=ch.c;
+  document.getElementById('qrWT').textContent=sel.s;
+  document.getElementById('qrWC').textContent=ch.n;
+  const full=addrFor(sel.ch);
+  const el=document.getElementById('qrAddr'); el.textContent=full.slice(0,10)+'…'+full.slice(-6); el.dataset.full=full;
+  document.getElementById('qrCp').innerHTML=CPI+' Copy';
+  document.getElementById('qrCp').classList.remove('ok');
+  const st=document.getElementById('qrSt'); st.className='qrst'; st.innerHTML='<span class="pulse"></span> Waiting for transfer…';
+  drawQr(document.getElementById('qrC'),full); startTimer();
+  document.getElementById('qrOvl').classList.add('open');
+  clearTimeout(qrTo);
+  // the QR only completes the BRIDGE — the BNB Chain deposit is still to confirm
+  qrTo=setTimeout(()=>{ st.className='qrst det'; st.innerHTML=CHK+' Received on BNB Chain — confirm the deposit';
+    clearInterval(qrInt); document.getElementById('qrTimer').style.display='none';
+    setTimeout(()=>{ closeQr(); bridged(); },1500); },4200);
+}
+function closeQr(){ clearTimeout(qrTo); clearInterval(qrInt); document.getElementById('qrOvl').classList.remove('open'); }
+function copyAddr(){
+  const b=document.getElementById('qrCp');
+  try{ navigator.clipboard.writeText(document.getElementById('qrAddr').dataset.full); }catch(e){}
+  b.innerHTML=CHK+' Copied'; b.classList.add('ok');
+}
+document.querySelectorAll('.ovl').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o){
+  if(o.id==='qrOvl')closeQr(); else if(o.id==='okOvl')closeOk(); else closePicker(); }}));
+addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeQr(); closePicker();
+  document.getElementById('okOvl').classList.remove('open'); }});
+
+/* ── init ── */
+paintChg(); setMode('pool'); onNative(); onInt();
+</script></html>
