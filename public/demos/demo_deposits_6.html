@@ -573,7 +573,11 @@ function unlock(){
 }
 
 /* ── chrome ── */
-function paintChg(){ document.body.classList.toggle('show-chg',showChg);
+function paintRoute(){                    // optional element — visible only in highlight mode
+  const r=document.getElementById('iRoute');
+  r.style.display = (r.dataset.avail==='1' && showChg) ? 'flex' : 'none';
+}
+function paintChg(){ document.body.classList.toggle('show-chg',showChg); paintRoute();
   document.getElementById('chgT').classList.toggle('on',showChg); }
 function toggleChg(){ showChg=!showChg; paintChg(); }
 
@@ -669,13 +673,14 @@ function onInt(){
   document.getElementById('iBal').textContent='Balance: '+fmt(sel.bal)+(isX(sel)?' on '+chOf(sel.ch).n:'');
   const r=document.getElementById('iRoute');
   if(isX(sel)&&v>0){
+    r.dataset.avail='1';
     const net=inUsd*0.9965;
-    r.style.display='flex';
     r.innerHTML=`<svg width="13" height="13" viewBox="0 0 512 512" fill="#00C896"><path d="M255.995 56C227.587 56 201.618 72.0497 188.914 97.4572L63.9181 347.461C52.2936 370.71 53.5358 398.321 67.2006 420.428C80.8653 442.535 105.003 456 131 456H381C406.997 456 431.135 442.544 444.799 420.428C458.464 398.321 459.706 370.71 448.082 347.461L323.077 97.4572C310.373 72.0497 284.404 56 255.995 56Z"/></svg>
       <span><b>${fmt(v)} ${sel.s}</b> on ${chOf(sel.ch).n} → <b>${usd(net)}</b> split across <b>both legs</b>.
       Bridge it ${canSign(sel)?'from your wallet or by QR':'by QR — '+chOf(sel.ch).n+' is non-EVM, so it deposits by transfer'},
       then confirm the deposit in your BNB Chain wallet. Routing, conversion and gas handled.</span>`;
-  } else r.style.display='none';
+  } else r.dataset.avail='';
+  paintRoute();
   paintCta();
 }
 function resetSteps(){
